@@ -5,9 +5,11 @@ import com.softawii.curupira.annotations.Arguments;
 import com.softawii.curupira.annotations.Command;
 import com.softawii.curupira.annotations.Group;
 import com.softawii.curupira.properties.Environment;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
@@ -35,29 +37,25 @@ public class Curupira extends ListenerAdapter {
     private JDA JDA;
     private Map<String, CommandHandler> commandMapper;
 
-    public Curupira(String pkgName, EventListener[] listeners) throws LoginException, InterruptedException {
+    private MessageEmbed helpEmbed;
 
-        String token = "";
 
+    public Curupira(JDA JDA, String pkg) {
+        this(JDA, new String[]{pkg});
+    }
+
+    public Curupira(JDA JDA, String[] pkgs) {
         // Init
         commandMapper = new HashMap<>();
+        this.JDA = JDA;
+        JDA.addEventListener(this);
 
-        // Default Builder
-        // We Will Build with Listeners and Slash Commands
-        JDABuilder builder = JDABuilder.createDefault(token).addEventListeners(this);
-
-        //  Adding the list of listeners to the EventListeners list
-        if(listeners != null) {
-            for (EventListener listener : listeners) {
-                builder.addEventListeners(listener);
-            }
+        for(String pkg : pkgs) {
+            addCommands(pkg);
         }
-        JDA = builder.build();
 
-
-        addCommands(pkgName);
-
-        JDA.awaitReady();
+        // Help
+        helpEmbed = createHelper();
     }
 
     private Set<Class> getClassesInPackage(String pkgName) {
@@ -108,7 +106,7 @@ public class Curupira extends ListenerAdapter {
 
             Command command = method.getAnnotation(Command.class);
 
-            String name = command.name();
+            String name = (command.name().isBlank() ? method.getName() : command.name()).toLowerCase();
             String description = command.description();
             Environment environment = command.environment();
             Permission[] permissions = command.permissions();
@@ -119,7 +117,7 @@ public class Curupira extends ListenerAdapter {
             if(commandMapper.containsKey(name)) {
                 throw new RuntimeException("Command with name: " + name + " already exists");
             }
-            commandMapper.put(name, new CommandHandler(method, permissions, environment, group));
+            commandMapper.put(name, new CommandHandler(method, permissions, environment, group, name, description));
 
             return commandData;
         };
@@ -134,11 +132,56 @@ public class Curupira extends ListenerAdapter {
         return new OptionData(type, name, description, required);
     }
 
+    private MessageEmbed createHelper() {
+        EmbedBuilder builder = new EmbedBuilder();
+
+        Map<String, StringBuilder> stringBuilder = new HashMap<>();
+
+        commandMapper.forEach((name, commandHandler) -> {
+            String groupName = commandHandler.getGroup().name();
+
+            stringBuilder.computeIfPresent(groupName, (key, localBuilder) -> {
+                localBuilder.append("**" + commandHandler.getName() + "**\n");
+                localBuilder.append("" + commandHandler.getDescription() + "\n\n");
+
+                return localBuilder;
+            });
+
+            stringBuilder.computeIfAbsent(groupName, k -> {
+                StringBuilder localBuilder = new StringBuilder();
+
+                localBuilder.append(commandHandler.getGroup().description() + "\n\n");
+
+                localBuilder.append("**" + commandHandler.getName() + "**\n");
+                localBuilder.append("" + commandHandler.getDescription() + "\n\n");
+
+                return localBuilder;
+            });
+        });
+
+        builder.setTitle("Command List");
+        builder.setDescription("Here is a list of all commands");
+
+        stringBuilder.forEach((groupName, localBuilder) -> {
+            builder.addField(groupName, localBuilder.toString(), false);
+        });
+
+        this.JDA.upsertCommand("help", "help").queue();
+
+        return builder.build();
+    }
+
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         System.out.println("Received Slash Command: " + event.getName());
         try {
-            this.commandMapper.get(event.getName()).execute(event);
+            if(event.getName().equals("help") && !commandMapper.containsKey("help")) {
+                event.replyEmbeds(helpEmbed).queue();
+                return;
+            }
+            else if (commandMapper.containsKey(event.getName())) {
+                this.commandMapper.get(event.getName()).execute(event);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

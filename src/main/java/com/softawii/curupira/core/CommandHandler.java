@@ -33,11 +33,16 @@ public class CommandHandler {
     private Environment     environment;
     private Group           group;
 
-    public CommandHandler(Method method, Permission[] permissions, Environment environment, Group group) {
+    private String          name;
+    private String          description;
+
+    public CommandHandler(Method method, Permission[] permissions, Environment environment, Group group, String name, String description) {
         this.method      = method;
         this.permissions = permissions;
         this.environment = environment;
         this.group       = group;
+        this.name        = name;
+        this.description = description;
     }
 
     private boolean canExecute(ChannelType channelType, Member member) throws InvalidChannelTypeException, MissingPermissionsException {
@@ -78,5 +83,17 @@ public class CommandHandler {
         } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
             e.printStackTrace();
         }
+    }
+
+    public Group getGroup() {
+        return group;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

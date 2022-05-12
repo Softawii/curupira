@@ -5,10 +5,10 @@ import com.softawii.curupira.annotations.Command;
 import com.softawii.curupira.annotations.Group;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
-@Group(name="Example", description="Hi")
+@Group(name="Group 1", description="Group Description")
 public class Example {
 
-    @Command(name="hello", description="Hello", permissions={})
+    @Command(description="Command Description", permissions={})
     @Argument(name="name", description="Name", required=false)
     @Argument(name="age", description="Age", required=false)
     public static void Command(SlashCommandInteractionEvent event) {
