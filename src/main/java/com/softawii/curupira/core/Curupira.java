@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
@@ -30,9 +31,8 @@ public class Curupira extends ListenerAdapter {
     private JDA JDA;
     private Map<String, CommandHandler> commandMapper;
     private Map<String, Method> buttonMapper;
-
     private Map<String, Method> menuMapper;
-
+    private Map<String, Method> modalMapper;
     private MessageEmbed helpEmbed;
 
 
@@ -45,6 +45,7 @@ public class Curupira extends ListenerAdapter {
         commandMapper = new HashMap<>();
         buttonMapper  = new HashMap<>();
         menuMapper    = new HashMap<>();
+        modalMapper   = new HashMap<>();
 
         // Args
         this.JDA = JDA;
@@ -78,6 +79,7 @@ public class Curupira extends ListenerAdapter {
             addCommands(cls);
             addButtons(cls);
             addMenus(cls);
+            addModals(cls);
         });
     }
 
@@ -119,6 +121,22 @@ public class Curupira extends ListenerAdapter {
 
                 menuMapper.put(id, method);
                 System.out.println("Found Menu: " + id);
+            });
+    }
+
+    private void addModals(Class cls) {
+        Arrays.stream(cls.getDeclaredMethods())
+            .filter(method -> method.isAnnotationPresent(Modal.class)).forEach(method -> {
+                Modal modal = method.getAnnotation(Modal.class);
+
+                String id = modal.id().isBlank() ? method.getName() : modal.id();
+
+                if(modalMapper.containsKey(id)) {
+                    throw new RuntimeException("Modal with id " + id + " already exists");
+                }
+
+                modalMapper.put(id, method);
+                System.out.println("Found Modal: " + id);
             });
     }
 
@@ -246,6 +264,20 @@ public class Curupira extends ListenerAdapter {
         if(menuMapper.containsKey(event.getComponentId())) {
             try {
                 menuMapper.get(event.getComponentId()).invoke(null, event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void onModalInteraction(@NotNull ModalInteractionEvent event) {
+        System.out.println("Received Modal: " + event.getModalId());
+
+        if(modalMapper.containsKey(event.getModalId())) {
+            try {
+                System.out.println("Invoking Modal: " + event.getModalId());
+                modalMapper.get(event.getModalId()).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 System.out.println("Error: " + e.getMessage());
             }
