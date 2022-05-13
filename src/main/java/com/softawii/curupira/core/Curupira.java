@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -30,6 +31,8 @@ public class Curupira extends ListenerAdapter {
     private Map<String, CommandHandler> commandMapper;
     private Map<String, Method> buttonMapper;
 
+    private Map<String, Method> menuMapper;
+
     private MessageEmbed helpEmbed;
 
 
@@ -41,6 +44,7 @@ public class Curupira extends ListenerAdapter {
         // Init
         commandMapper = new HashMap<>();
         buttonMapper  = new HashMap<>();
+        menuMapper    = new HashMap<>();
 
         // Args
         this.JDA = JDA;
@@ -73,6 +77,7 @@ public class Curupira extends ListenerAdapter {
 
             addCommands(cls);
             addButtons(cls);
+            addMenus(cls);
         });
     }
 
@@ -87,8 +92,8 @@ public class Curupira extends ListenerAdapter {
 
     private void addButtons(Class cls) {
         Arrays.stream(cls.getDeclaredMethods())
-            .filter(method -> method.isAnnotationPresent(ButtonAnnotation.class)).forEach(method -> {
-                ButtonAnnotation button = method.getAnnotation(ButtonAnnotation.class);
+            .filter(method -> method.isAnnotationPresent(Button.class)).forEach(method -> {
+                Button button = method.getAnnotation(Button.class);
 
                 String id = button.id().isBlank() ? method.getName() : button.id();
 
@@ -98,6 +103,22 @@ public class Curupira extends ListenerAdapter {
 
                 buttonMapper.put(id, method);
                 System.out.println("Found Button: " + id);
+            });
+    }
+
+    private void addMenus(Class cls) {
+        Arrays.stream(cls.getDeclaredMethods())
+            .filter(method -> method.isAnnotationPresent(Menu.class)).forEach(method -> {
+                Menu menu = method.getAnnotation(Menu.class);
+
+                String id = menu.id().isBlank() ? method.getName() : menu.id();
+
+                if(menuMapper.containsKey(id)) {
+                    throw new RuntimeException("Menu with id " + id + " already exists");
+                }
+
+                menuMapper.put(id, method);
+                System.out.println("Found Menu: " + id);
             });
     }
 
@@ -212,6 +233,19 @@ public class Curupira extends ListenerAdapter {
         if(buttonMapper.containsKey(id)) {
             try {
                 this.buttonMapper.get(id).invoke(null, event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void onSelectMenuInteraction(@NotNull SelectMenuInteractionEvent event) {
+        System.out.println("Received Select Menu: " + event.getComponentId());
+
+        if(menuMapper.containsKey(event.getComponentId())) {
+            try {
+                menuMapper.get(event.getComponentId()).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 System.out.println("Error: " + e.getMessage());
             }
