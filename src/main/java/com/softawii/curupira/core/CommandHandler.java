@@ -7,6 +7,7 @@ import com.softawii.curupira.properties.Environment;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;;
 
 import java.lang.reflect.InvocationTargetException;
@@ -76,6 +77,16 @@ public class CommandHandler {
     }
 
     public void execute(SlashCommandInteractionEvent event) {
+        try {
+            if (canExecute(event.getChannelType(), event.getMember())) {
+                method.invoke(null, event);
+            }
+        } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void execute(GenericCommandInteractionEvent event) {
         try {
             if (canExecute(event.getChannelType(), event.getMember())) {
                 method.invoke(null, event);

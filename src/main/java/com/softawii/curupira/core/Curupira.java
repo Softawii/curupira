@@ -8,14 +8,21 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command.Type;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
+import net.dv8tion.jda.internal.interactions.command.ContextInteractionImpl;
 import org.jetbrains.annotations.NotNull;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -34,7 +41,6 @@ public class Curupira extends ListenerAdapter {
     private Map<String, Method> menuMapper;
     private Map<String, Method> modalMapper;
     private MessageEmbed helpEmbed;
-
 
     public Curupira(JDA JDA, String pkg) {
         this(JDA, new String[]{pkg});
@@ -89,7 +95,9 @@ public class Curupira extends ListenerAdapter {
                 .filter(method -> method.isAnnotationPresent(Command.class))
                 .map(getMethodCommandDataFunction(group)).collect(Collectors.toList());
 
-        JDA.updateCommands().addCommands(commands).queue();
+        commands.forEach(command -> {
+            JDA.upsertCommand(command).queue();
+        });
     }
 
     private void addButtons(Class cls) {
@@ -162,12 +170,15 @@ public class Curupira extends ListenerAdapter {
 
             Command command = method.getAnnotation(Command.class);
 
-            String name = (command.name().isBlank() ? method.getName() : command.name()).toLowerCase();
-            String description = command.description();
-            Environment environment = command.environment();
+            String name              = (command.name().isBlank() ? method.getName() : command.name()).toLowerCase();
+            String description       = command.description();
+            Environment environment  = command.environment();
             Permission[] permissions = command.permissions();
+            Type type                = command.type();
 
-            CommandDataImpl commandData = new CommandDataImpl(name, description);
+            CommandDataImpl commandData = null;
+            if(type == Type.SLASH) commandData = new CommandDataImpl(name, description);
+            else                   commandData = new CommandDataImpl(type, name);
             commandData.addOptions(options);
 
             if(commandMapper.containsKey(name)) {
@@ -281,6 +292,32 @@ public class Curupira extends ListenerAdapter {
             } catch (IllegalAccessException | InvocationTargetException e) {
                 System.out.println("Error: " + e.getMessage());
             }
+        }
+    }
+
+    @Override
+    public void onUserContextInteraction(UserContextInteractionEvent event) {
+        System.out.println("Received User Context: " + event.getName());
+
+        try {
+            if (commandMapper.containsKey(event.getName())) {
+                this.commandMapper.get(event.getName()).execute(event);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onMessageContextInteraction(MessageContextInteractionEvent event) {
+        System.out.println("Received Message Context: " + event.getName());
+
+        try {
+            if (commandMapper.containsKey(event.getName())) {
+                this.commandMapper.get(event.getName()).execute(event);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

@@ -2,6 +2,8 @@ package com.softawii.example;
 
 import com.softawii.curupira.annotations.*;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
@@ -33,8 +35,8 @@ public class Example {
             .queue();
     }
 
-    @Command(description="Command Description", permissions={})
-    public static void Menu(SlashCommandInteractionEvent event) {
+    @Command(description="Command Description", permissions={}, type= net.dv8tion.jda.api.interactions.commands.Command.Type.MESSAGE)
+    public static void Menu(MessageContextInteractionEvent event) {
         SelectMenu menu = SelectMenu.create(strMenu)
                 .setRequiredRange(1, 25)
                 .setPlaceholder("Choose your class") // shows the placeholder indicating what this menu is for
