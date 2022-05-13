@@ -1,32 +1,24 @@
 package com.softawii.curupira.core;
 
-import com.softawii.curupira.annotations.Argument;
-import com.softawii.curupira.annotations.Arguments;
-import com.softawii.curupira.annotations.Command;
-import com.softawii.curupira.annotations.Group;
+import com.softawii.curupira.annotations.*;
+//import com.softawii.curupira.annotations.
 import com.softawii.curupira.properties.Environment;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
-import org.hibernate.annotations.common.reflection.ReflectionUtil;
 import org.jetbrains.annotations.NotNull;
-import org.reflections.ReflectionUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
-import javax.security.auth.login.LoginException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
@@ -36,6 +28,7 @@ public class Curupira extends ListenerAdapter {
 
     private JDA JDA;
     private Map<String, CommandHandler> commandMapper;
+    private Map<String, Method> buttonMapper;
 
     private MessageEmbed helpEmbed;
 
@@ -44,14 +37,17 @@ public class Curupira extends ListenerAdapter {
         this(JDA, new String[]{pkg});
     }
 
-    public Curupira(JDA JDA, String[] pkgs) {
+    public Curupira(@NotNull JDA JDA, String @NotNull [] packages) {
         // Init
         commandMapper = new HashMap<>();
+        buttonMapper  = new HashMap<>();
+
+        // Args
         this.JDA = JDA;
         JDA.addEventListener(this);
 
-        for(String pkg : pkgs) {
-            addCommands(pkg);
+        for(String pkg : packages) {
+            setPackage(pkg);
         }
 
         // Help
@@ -67,21 +63,42 @@ public class Curupira extends ListenerAdapter {
         return cls.isAnnotationPresent(Group.class);
     }
 
-    private void addCommands(String pkgName) {
+    private void setPackage(String pkgName) {
         Set<Class> classes = getClassesInPackage(pkgName);
 
         // For each class in the package that is a group
         classes.stream().filter(this::isGroup).forEach(cls -> {
-            Group group             = (Group) cls.getAnnotation(Group.class);
 
             System.out.println("Found Group: " + cls.getSimpleName());
 
-            List<CommandData> commands = Arrays.stream(cls.getDeclaredMethods())
-                    .filter(method -> method.isAnnotationPresent(Command.class))
-                    .map(getMethodCommandDataFunction(group)).collect(Collectors.toList());
-
-            JDA.updateCommands().addCommands(commands).queue();
+            addCommands(cls);
+            addButtons(cls);
         });
+    }
+
+    private void addCommands(Class cls) {
+        Group group             = (Group) cls.getAnnotation(Group.class);
+        List<CommandData> commands = Arrays.stream(cls.getDeclaredMethods())
+                .filter(method -> method.isAnnotationPresent(Command.class))
+                .map(getMethodCommandDataFunction(group)).collect(Collectors.toList());
+
+        JDA.updateCommands().addCommands(commands).queue();
+    }
+
+    private void addButtons(Class cls) {
+        Arrays.stream(cls.getDeclaredMethods())
+            .filter(method -> method.isAnnotationPresent(ButtonAnnotation.class)).forEach(method -> {
+                ButtonAnnotation button = method.getAnnotation(ButtonAnnotation.class);
+
+                String id = button.id().isBlank() ? method.getName() : button.id();
+
+                if(buttonMapper.containsKey(id)) {
+                    throw new RuntimeException("Button with id " + id + " already exists");
+                }
+
+                buttonMapper.put(id, method);
+                System.out.println("Found Button: " + id);
+            });
     }
 
     @NotNull
@@ -184,6 +201,20 @@ public class Curupira extends ListenerAdapter {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    @Override
+    public void onButtonInteraction(ButtonInteractionEvent event)
+    {
+        String id = event.getComponentId();
+        System.out.println("Received Button: " + id);
+
+        if(buttonMapper.containsKey(id)) {
+            try {
+                this.buttonMapper.get(id).invoke(null, event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
         }
     }
 }

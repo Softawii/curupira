@@ -10,7 +10,7 @@ import java.util.EventListener;
 public class Main {
     public static void main(String[] args) throws LoginException, InterruptedException {
 
-        String token = "No token";
+        String token = "";
         String pkg   = "com.softawii.example";
 
         // Default Builder
