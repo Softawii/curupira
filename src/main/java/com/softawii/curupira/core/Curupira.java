@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -42,16 +43,9 @@ public class Curupira extends ListenerAdapter {
     private Map<String, Method> modalMapper;
     private MessageEmbed helpEmbed;
 
-    public Curupira(JDA JDA, String pkg) {
-        this(JDA, new String[]{pkg});
-    }
-
-    public Curupira(@NotNull JDA JDA, String @NotNull [] packages) {
+    public Curupira(@NotNull JDA JDA, String @NotNull ... packages) {
         // Init
         commandMapper = new HashMap<>();
-        buttonMapper  = new HashMap<>();
-        menuMapper    = new HashMap<>();
-        modalMapper   = new HashMap<>();
 
         // Args
         this.JDA = JDA;
@@ -83,9 +77,10 @@ public class Curupira extends ListenerAdapter {
             System.out.println("Found Group: " + cls.getSimpleName());
 
             addCommands(cls);
-            addButtons(cls);
-            addMenus(cls);
-            addModals(cls);
+            //addButtons(cls);
+            buttonMapper  = getMethodsAnnotatedBy(cls, Button.class);
+            menuMapper    = getMethodsAnnotatedBy(cls, Menu.class);
+            modalMapper   = getMethodsAnnotatedBy(cls, Modal.class);;
         });
     }
 
@@ -100,52 +95,40 @@ public class Curupira extends ListenerAdapter {
         });
     }
 
-    private void addButtons(Class cls) {
+    private <T extends Annotation> Map<String, Method> getMethodsAnnotatedBy(Class cls, Class<T> annotationClass) {
+
+        Map<String, Method> result = new HashMap<>();
+
         Arrays.stream(cls.getDeclaredMethods())
-            .filter(method -> method.isAnnotationPresent(Button.class)).forEach(method -> {
-                Button button = method.getAnnotation(Button.class);
-
-                String id = button.id().isBlank() ? method.getName() : button.id();
-
-                if(buttonMapper.containsKey(id)) {
-                    throw new RuntimeException("Button with id " + id + " already exists");
+            .filter(method -> method.isAnnotationPresent(annotationClass)).forEach(method -> {
+                T annotation = method.getAnnotation(annotationClass);
+                String id = getID(annotation, method.getName());
+                if(result.containsKey(id)) {
+                    throw new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists");
                 }
 
-                buttonMapper.put(id, method);
-                System.out.println("Found Button: " + id);
+                result.put(id, method);
+                System.out.println("Found " + annotationClass.getSimpleName() + ": " + id);
             });
+
+        return result;
     }
 
-    private void addMenus(Class cls) {
-        Arrays.stream(cls.getDeclaredMethods())
-            .filter(method -> method.isAnnotationPresent(Menu.class)).forEach(method -> {
-                Menu menu = method.getAnnotation(Menu.class);
-
-                String id = menu.id().isBlank() ? method.getName() : menu.id();
-
-                if(menuMapper.containsKey(id)) {
-                    throw new RuntimeException("Menu with id " + id + " already exists");
-                }
-
-                menuMapper.put(id, method);
-                System.out.println("Found Menu: " + id);
-            });
-    }
-
-    private void addModals(Class cls) {
-        Arrays.stream(cls.getDeclaredMethods())
-            .filter(method -> method.isAnnotationPresent(Modal.class)).forEach(method -> {
-                Modal modal = method.getAnnotation(Modal.class);
-
-                String id = modal.id().isBlank() ? method.getName() : modal.id();
-
-                if(modalMapper.containsKey(id)) {
-                    throw new RuntimeException("Modal with id " + id + " already exists");
-                }
-
-                modalMapper.put(id, method);
-                System.out.println("Found Modal: " + id);
-            });
+    private <T extends Annotation> String getID(T annotation, String defaultID) {
+        if(annotation instanceof Button) {
+            String id = ((Button) annotation).id();
+            return id.isBlank() ? defaultID : id;
+        }
+        else if(annotation instanceof Menu) {
+            String id = ((Menu) annotation).id();
+            return id.isBlank() ? defaultID : id;
+        }
+        else if(annotation instanceof Modal) {
+            String id = ((Modal) annotation).id();
+            return id.isBlank() ? defaultID : id;
+        } else {
+            throw new RuntimeException("Annotation not supported");
+        }
     }
 
     @NotNull
