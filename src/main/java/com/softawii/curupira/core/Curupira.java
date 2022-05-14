@@ -46,6 +46,9 @@ public class Curupira extends ListenerAdapter {
     public Curupira(@NotNull JDA JDA, String @NotNull ... packages) {
         // Init
         commandMapper = new HashMap<>();
+        buttonMapper  = new HashMap<>();
+        menuMapper    = new HashMap<>();
+        modalMapper   = new HashMap<>();
 
         // Args
         this.JDA = JDA;
@@ -64,23 +67,18 @@ public class Curupira extends ListenerAdapter {
         return new HashSet<>(reflections.getSubTypesOf(Object.class));
     }
 
-    private boolean isGroup(Class cls) {
-        return cls.isAnnotationPresent(Group.class);
-    }
-
     private void setPackage(String pkgName) {
         Set<Class> classes = getClassesInPackage(pkgName);
 
         // For each class in the package that is a group
-        classes.stream().filter(this::isGroup).forEach(cls -> {
+        classes.stream().filter(cls -> cls.isAnnotationPresent(Group.class)).forEach(cls -> {
 
             System.out.println("Found Group: " + cls.getSimpleName());
 
             addCommands(cls);
-            //addButtons(cls);
-            buttonMapper  = getMethodsAnnotatedBy(cls, Button.class);
-            menuMapper    = getMethodsAnnotatedBy(cls, Menu.class);
-            modalMapper   = getMethodsAnnotatedBy(cls, Modal.class);;
+            getMethodsAnnotatedBy(cls, Button.class, buttonMapper);
+            getMethodsAnnotatedBy(cls, Menu.class  , menuMapper);
+            getMethodsAnnotatedBy(cls, Modal.class , modalMapper);
         });
     }
 
@@ -95,23 +93,18 @@ public class Curupira extends ListenerAdapter {
         });
     }
 
-    private <T extends Annotation> Map<String, Method> getMethodsAnnotatedBy(Class cls, Class<T> annotationClass) {
-
-        Map<String, Method> result = new HashMap<>();
-
+    private <T extends Annotation> void getMethodsAnnotatedBy(Class cls, Class<T> annotationClass, Map<String, Method> mapper) {
         Arrays.stream(cls.getDeclaredMethods())
             .filter(method -> method.isAnnotationPresent(annotationClass)).forEach(method -> {
                 T annotation = method.getAnnotation(annotationClass);
                 String id = getID(annotation, method.getName());
-                if(result.containsKey(id)) {
+                if(mapper.containsKey(id)) {
                     throw new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists");
                 }
 
-                result.put(id, method);
+                    mapper.put(id, method);
                 System.out.println("Found " + annotationClass.getSimpleName() + ": " + id);
             });
-
-        return result;
     }
 
     private <T extends Annotation> String getID(T annotation, String defaultID) {
