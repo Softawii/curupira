@@ -143,19 +143,28 @@ public class Curupira extends ListenerAdapter {
             // One Argument or Multiple Arguments
             if (method.isAnnotationPresent(Argument.class)) {
                 Argument argument = method.getAnnotation(Argument.class);
-                options.add(parserArgument(argument));
+                options.add(parserArgument(argument, name));
 
             } else if (method.isAnnotationPresent(Arguments.class)) {
                 Argument[] arguments = method.getAnnotation(Arguments.class).value();
 
                 for (Argument argument : arguments) {
-                    OptionData optionData = parserArgument(argument);
+                    OptionData optionData = parserArgument(argument, name);
                     options.add(optionData);
+                }
+            }
 
-                    if(optionData.isAutoComplete()) {
-                        String key = name + ":" +  argument.name();
-                        autoCompleteMapper.put(key, Utils.getChoices(argument.choices(), argument.type()));
-                    }
+            // Range
+            if (method.isAnnotationPresent(Range.class)) {
+                Range range = method.getAnnotation(Range.class);
+                options.addAll(parserRange(range, name));
+
+            }
+            else if(method.isAnnotationPresent(Ranges.class)) {
+                Range[] ranges = method.getAnnotation(Ranges.class).value();
+
+                for(Range range : ranges) {
+                    options.addAll(parserRange(range, name));
                 }
             }
 
@@ -173,7 +182,7 @@ public class Curupira extends ListenerAdapter {
         };
     }
 
-    private OptionData parserArgument(Argument argument) {
+    private OptionData parserArgument(Argument argument, String methodName) {
         String     name            = argument.name();
         String     description     = argument.description();
         boolean    required        = argument.required();
@@ -184,8 +193,50 @@ public class Curupira extends ListenerAdapter {
 
         if(!hasAutoComplete) {
             optionData.addChoices(Utils.getChoices(argument.choices(), type));
+        } else {
+            String key = methodName + ":" +  name;
+            if(autoCompleteMapper.containsKey(key)) throw new RuntimeException("AutoComplete with name: " + key + " already exists");
+            autoCompleteMapper.put(key, Utils.getChoices(argument.choices(), argument.type()));
         }
         return optionData;
+    }
+
+    private List<OptionData> parserRange(Range range, String methodName) {
+
+        Argument argument = range.value();
+        int min = range.min();
+        int max = range.max();
+        int step = range.steps();
+
+        ArrayList<OptionData> options = new ArrayList<>();
+
+        String description = argument.description();
+        boolean required = argument.required();
+        OptionType type = argument.type();
+        boolean hasAutoComplete = argument.hasAutoComplete();
+        List<Choice> choices = Utils.getChoices(argument.choices(), type);
+
+        if(step <= 0) throw new RuntimeException("Steps must be greater than 0");
+
+        for(int value = min; value <= max; value += step) {
+
+            String name = argument.name() + value;
+
+            OptionData optionData = new OptionData(type, name, description, required, hasAutoComplete);
+
+            if (!hasAutoComplete) {
+                optionData.addChoices(choices);
+            } else {
+                String key = methodName + ":" +  name;
+                if(autoCompleteMapper.containsKey(key)) throw new RuntimeException("AutoComplete with name: " + name + " already exists");
+
+                autoCompleteMapper.put(key, choices);
+            }
+
+            options.add(optionData);
+        }
+
+        return options;
     }
 
     private MessageEmbed createHelper() {
@@ -313,6 +364,8 @@ public class Curupira extends ListenerAdapter {
     @Override
     public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
         String key = event.getName() + ":" + event.getFocusedOption().getName();
+
+        System.out.println("Received Command Auto Complete: " + key);
 
         if(autoCompleteMapper.containsKey(key)) {
             List<Choice> choices = autoCompleteMapper.get(key)

@@ -14,6 +14,8 @@ import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+
 import static net.dv8tion.jda.api.interactions.components.buttons.Button.*;
 
 @Group(name="Group 1", description="Group Description")
@@ -35,6 +37,22 @@ public class Example {
                 danger("Cancel", "Cancel")
             )
             .queue();
+    }
+
+    @Command(description="Command Description")
+    @Range(value=@Argument(name="name", description="name of users", required=false, type=OptionType.STRING,
+            hasAutoComplete = true, choices = {@Choice(key="Yan"), @Choice(key="Eduardo"), @Choice(key="Romulo"), @Choice(key="Nicolas")})
+            , min=0, max=15)
+    public static void Names(SlashCommandInteractionEvent event) {
+
+        ArrayList<String> names = new ArrayList<>();
+
+        for(int i = 0; i < 16; i++) {
+            if(event.getOption("name" + i) != null)
+                names.add(event.getOption("name" + i).getAsString());
+        }
+
+        event.reply("Names: " + String.join(", ", names)).queue();
     }
 
     @Command(description="Command Description", permissions={}, type= net.dv8tion.jda.api.interactions.commands.Command.Type.MESSAGE)

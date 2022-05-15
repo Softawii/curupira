@@ -16,7 +16,7 @@ public @interface Command {
     String       name()        default "";
     String       description() default "";
     Environment  environment() default Environment.SERVER;
-    Permission[] permissions();
+    Permission[] permissions() default {};
     Type         type()        default Type.SLASH;
 
 }
