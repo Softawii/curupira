@@ -22,8 +22,10 @@ public class Example {
     private static final String strMenu = "menu:class";
 
     @Command(description="Command Description", permissions={})
-    @Argument(name="name", description="Name", required=true, type= OptionType.STRING, choices = {"John", "Jane", "Bob"})
-    @Argument(name="age", description="Age", required=true, type=OptionType.INTEGER, hasAutoComplete = true, choices = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"})
+    @Argument(name="name", description="Name", required=true, type= OptionType.STRING, choices = {@Choice(key="John"), @Choice(key="Jane")})
+    @Argument(name="age", description="Age", required=true, type=OptionType.INTEGER,
+            hasAutoComplete = true,
+            choices={@Choice(key="Um", value="1"), @Choice(key="Dois", value="2"), @Choice(key="Tres", value="3"), @Choice(key="Quatro", value="4"), @Choice(key="Cinco", value="5")})
     public static void Introduce(SlashCommandInteractionEvent event) {
         String msg = "Hello " + event.getOption("name").getAsString() + "! are you " + event.getOption("age").getAsInt() + " years old?";
 
