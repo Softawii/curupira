@@ -3,17 +3,16 @@ package com.softawii.curupira.core;
 import com.softawii.curupira.annotations.*;
 //import com.softawii.curupira.annotations.
 import com.softawii.curupira.properties.Environment;
+import com.softawii.curupira.utils.Utils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.*;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.Command.Type;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -41,14 +40,16 @@ public class Curupira extends ListenerAdapter {
     private Map<String, Method> buttonMapper;
     private Map<String, Method> menuMapper;
     private Map<String, Method> modalMapper;
+    private Map<String, List<Choice>> autoCompleteMapper;
     private MessageEmbed helpEmbed;
 
     public Curupira(@NotNull JDA JDA, String @NotNull ... packages) {
         // Init
-        commandMapper = new HashMap<>();
-        buttonMapper  = new HashMap<>();
-        menuMapper    = new HashMap<>();
-        modalMapper   = new HashMap<>();
+        commandMapper       = new HashMap<>();
+        buttonMapper        = new HashMap<>();
+        menuMapper          = new HashMap<>();
+        modalMapper         = new HashMap<>();
+        autoCompleteMapper  = new HashMap<>();
 
         // Args
         this.JDA = JDA;
@@ -129,6 +130,14 @@ public class Curupira extends ListenerAdapter {
         return method -> {
             System.out.println("Found Command: " + method.getName());
 
+            Command command = method.getAnnotation(Command.class);
+
+            String name              = (command.name().isBlank() ? method.getName() : command.name()).toLowerCase();
+            String description       = command.description();
+            Environment environment  = command.environment();
+            Permission[] permissions = command.permissions();
+            Type type                = command.type();
+
             List<OptionData> options = new ArrayList<>();
 
             // One Argument or Multiple Arguments
@@ -140,19 +149,17 @@ public class Curupira extends ListenerAdapter {
                 Argument[] arguments = method.getAnnotation(Arguments.class).value();
 
                 for (Argument argument : arguments) {
-                    options.add(parserArgument(argument));
+                    OptionData optionData = parserArgument(argument);
+                    options.add(optionData);
+
+                    if(optionData.isAutoComplete()) {
+                        String key = name + ":" +  argument.name();
+                        autoCompleteMapper.put(key, Utils.getChoices(argument.choices(), argument.type()));
+                    }
                 }
             }
 
-            Command command = method.getAnnotation(Command.class);
-
-            String name              = (command.name().isBlank() ? method.getName() : command.name()).toLowerCase();
-            String description       = command.description();
-            Environment environment  = command.environment();
-            Permission[] permissions = command.permissions();
-            Type type                = command.type();
-
-            CommandDataImpl commandData = null;
+            CommandDataImpl commandData;
             if(type == Type.SLASH) commandData = new CommandDataImpl(name, description);
             else                   commandData = new CommandDataImpl(type, name);
             commandData.addOptions(options);
@@ -167,12 +174,18 @@ public class Curupira extends ListenerAdapter {
     }
 
     private OptionData parserArgument(Argument argument) {
-        String     name         = argument.name();
-        String     description  = argument.description();
-        boolean    required     = argument.required();
-        OptionType type         = argument.type();
+        String     name            = argument.name();
+        String     description     = argument.description();
+        boolean    required        = argument.required();
+        OptionType type            = argument.type();
+        boolean    hasAutoComplete = argument.hasAutoComplete();
 
-        return new OptionData(type, name, description, required);
+        OptionData optionData = new OptionData(type, name, description, required, hasAutoComplete);
+
+        if(!hasAutoComplete) {
+            optionData.addChoices(Utils.getChoices(argument.choices(), type));
+        }
+        return optionData;
     }
 
     private MessageEmbed createHelper() {
@@ -294,6 +307,19 @@ public class Curupira extends ListenerAdapter {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
+        String key = event.getName() + ":" + event.getFocusedOption().getName();
+
+        if(autoCompleteMapper.containsKey(key)) {
+            List<Choice> choices = autoCompleteMapper.get(key)
+                    .stream()
+                    .filter(c -> c.getName().startsWith(event.getFocusedOption().getValue()))
+                    .collect(Collectors.toList());
+            event.replyChoices(choices).queue();
         }
     }
 }
