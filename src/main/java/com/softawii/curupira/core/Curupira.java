@@ -34,13 +34,13 @@ import java.util.stream.Collectors;
 
 public class Curupira extends ListenerAdapter {
 
-    private JDA JDA;
-    private Map<String, CommandHandler> commandMapper;
-    private Map<String, Method> buttonMapper;
-    private Map<String, Method> menuMapper;
-    private Map<String, Method> modalMapper;
-    private Map<String, List<Choice>> autoCompleteMapper;
-    private MessageEmbed helpEmbed;
+    private final JDA JDA;
+    private final Map<String, CommandHandler> commandMapper;
+    private final Map<String, Method> buttonMapper;
+    private final Map<String, Method> menuMapper;
+    private final Map<String, Method> modalMapper;
+    private final Map<String, List<Choice>> autoCompleteMapper;
+    private final MessageEmbed helpEmbed;
 
     public Curupira(@NotNull JDA JDA, String @NotNull ... packages) {
         // Init
@@ -83,10 +83,11 @@ public class Curupira extends ListenerAdapter {
     }
 
     private void addCommands(Class cls) {
-        Group group             = (Group) cls.getAnnotation(Group.class);
+        Group group = (Group) cls.getAnnotation(Group.class);
         List<CommandData> commands = Arrays.stream(cls.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(Command.class))
-                .map(getMethodCommandDataFunction(group)).collect(Collectors.toList());
+                .map(getMethodCommandDataFunction(group))
+                .collect(Collectors.toList());
 
         commands.forEach(command -> {
             JDA.upsertCommand(command).queue();
@@ -95,16 +96,17 @@ public class Curupira extends ListenerAdapter {
 
     private <T extends Annotation> void getMethodsAnnotatedBy(Class cls, Class<T> annotationClass, Map<String, Method> mapper) {
         Arrays.stream(cls.getDeclaredMethods())
-            .filter(method -> method.isAnnotationPresent(annotationClass)).forEach(method -> {
-                T annotation = method.getAnnotation(annotationClass);
-                String id = getID(annotation, method.getName());
-                if(mapper.containsKey(id)) {
-                    throw new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists");
-                }
+                .filter(method -> method.isAnnotationPresent(annotationClass))
+                .forEach(method -> {
+                    T annotation = method.getAnnotation(annotationClass);
+                    String id = getID(annotation, method.getName());
+                    if(mapper.containsKey(id)) {
+                        throw new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists");
+                    }
 
                     mapper.put(id, method);
-                System.out.println("Found " + annotationClass.getSimpleName() + ": " + id);
-            });
+                    System.out.println("Found " + annotationClass.getSimpleName() + ": " + id);
+                });
     }
 
     private <T extends Annotation> String getID(T annotation, String defaultID) {
@@ -283,7 +285,6 @@ public class Curupira extends ListenerAdapter {
         try {
             if(event.getName().equals("help") && !commandMapper.containsKey("help")) {
                 event.replyEmbeds(helpEmbed).queue();
-                return;
             }
             else if (commandMapper.containsKey(event.getName())) {
                 this.commandMapper.get(event.getName()).execute(event);
