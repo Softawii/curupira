@@ -21,6 +21,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
@@ -34,6 +36,8 @@ import java.util.stream.Collectors;
 
 public class Curupira extends ListenerAdapter {
 
+    private static final Logger LOGGER = LogManager.getLogger(Curupira.class);
+
     private final JDA JDA;
     private final Map<String, CommandHandler> commandMapper;
     private final Map<String, Method> buttonMapper;
@@ -43,6 +47,7 @@ public class Curupira extends ListenerAdapter {
     private final MessageEmbed helpEmbed;
 
     public Curupira(@NotNull JDA JDA, String @NotNull ... packages) {
+        LOGGER.info("Inicializing Curupira");
         // Init
         commandMapper       = new HashMap<>();
         buttonMapper        = new HashMap<>();
@@ -60,9 +65,11 @@ public class Curupira extends ListenerAdapter {
 
         // Help
         helpEmbed = createHelper();
+        LOGGER.info("Curupira initialized");
     }
 
     private Set<Class> getClassesInPackage(String pkgName) {
+        LOGGER.debug("Searching for classes in package '" + pkgName + "'");
         Reflections reflections = new Reflections(pkgName, Scanners.SubTypes.filterResultsBy(s -> true));
         return new HashSet<>(reflections.getSubTypesOf(Object.class));
     }
@@ -72,8 +79,7 @@ public class Curupira extends ListenerAdapter {
 
         // For each class in the package that is a group
         classes.stream().filter(cls -> cls.isAnnotationPresent(Group.class)).forEach(cls -> {
-
-            System.out.println("Found Group: " + cls.getSimpleName());
+            LOGGER.debug("Found Group: " + cls.getSimpleName());
 
             addCommands(cls);
             getMethodsAnnotatedBy(cls, Button.class, buttonMapper);
@@ -101,11 +107,11 @@ public class Curupira extends ListenerAdapter {
                     T annotation = method.getAnnotation(annotationClass);
                     String id = getID(annotation, method.getName());
                     if(mapper.containsKey(id)) {
-                        throw new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists");
+                        throw LOGGER.throwing(new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists"));
                     }
 
                     mapper.put(id, method);
-                    System.out.println("Found " + annotationClass.getSimpleName() + ": " + id);
+                    LOGGER.debug("Found " + annotationClass.getSimpleName() + ": " + id);
                 });
     }
 
@@ -122,14 +128,14 @@ public class Curupira extends ListenerAdapter {
             String id = ((Modal) annotation).id();
             return id.isBlank() ? defaultID : id;
         } else {
-            throw new RuntimeException("Annotation not supported");
+            throw LOGGER.throwing(new RuntimeException("Annotation not supported"));
         }
     }
 
     @NotNull
     private Function<Method, CommandDataImpl> getMethodCommandDataFunction(Group group) {
         return method -> {
-            System.out.println("Found Command: " + method.getName());
+            LOGGER.debug("Found Command: " + method.getName());
 
             Command command = method.getAnnotation(Command.class);
 
@@ -159,7 +165,6 @@ public class Curupira extends ListenerAdapter {
             if (method.isAnnotationPresent(Range.class)) {
                 Range range = method.getAnnotation(Range.class);
                 options.addAll(parserRange(range, name));
-
             }
             else if(method.isAnnotationPresent(Ranges.class)) {
                 Range[] ranges = method.getAnnotation(Ranges.class).value();
@@ -175,7 +180,7 @@ public class Curupira extends ListenerAdapter {
             commandData.addOptions(options);
 
             if(commandMapper.containsKey(name)) {
-                throw new RuntimeException("Command with name: " + name + " already exists");
+                throw LOGGER.throwing(new RuntimeException("Command with name: " + name + " already exists"));
             }
             commandMapper.put(name, new CommandHandler(method, permissions, environment, group, name, description));
 
@@ -196,14 +201,13 @@ public class Curupira extends ListenerAdapter {
             optionData.addChoices(Utils.getChoices(argument.choices(), type));
         } else {
             String key = methodName + ":" +  name;
-            if(autoCompleteMapper.containsKey(key)) throw new RuntimeException("AutoComplete with name: " + key + " already exists");
+            if(autoCompleteMapper.containsKey(key)) throw LOGGER.throwing(new RuntimeException("Command with name: " + name + " already exists"));
             autoCompleteMapper.put(key, Utils.getChoices(argument.choices(), argument.type()));
         }
         return optionData;
     }
 
     private List<OptionData> parserRange(Range range, String methodName) {
-
         Argument argument = range.value();
         int min = range.min();
         int max = range.max();
@@ -217,19 +221,17 @@ public class Curupira extends ListenerAdapter {
         boolean hasAutoComplete = argument.hasAutoComplete();
         List<Choice> choices = Utils.getChoices(argument.choices(), type);
 
-        if(step <= 0) throw new RuntimeException("Steps must be greater than 0");
+        if(step <= 0) throw LOGGER.throwing(new RuntimeException("Steps must be greater than 0"));
 
         for(int value = min; value <= max; value += step) {
-
             String name = argument.name() + value;
-
             OptionData optionData = new OptionData(type, name, description, required, hasAutoComplete);
 
             if (!hasAutoComplete) {
                 optionData.addChoices(choices);
             } else {
                 String key = methodName + ":" +  name;
-                if(autoCompleteMapper.containsKey(key)) throw new RuntimeException("AutoComplete with name: " + name + " already exists");
+                if(autoCompleteMapper.containsKey(key)) throw LOGGER.throwing(new RuntimeException("AutoComplete with name: " + name + " already exists"));
 
                 autoCompleteMapper.put(key, choices);
             }
@@ -242,7 +244,6 @@ public class Curupira extends ListenerAdapter {
 
     private MessageEmbed createHelper() {
         EmbedBuilder builder = new EmbedBuilder();
-
         Map<String, StringBuilder> stringBuilder = new HashMap<>();
 
         commandMapper.forEach((name, commandHandler) -> {
@@ -281,7 +282,7 @@ public class Curupira extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-        System.out.println("Received Slash Command: " + event.getName());
+        LOGGER.debug("Received Slash Command: " + event.getName());
         try {
             if(event.getName().equals("help") && !commandMapper.containsKey("help")) {
                 event.replyEmbeds(helpEmbed).queue();
@@ -290,74 +291,73 @@ public class Curupira extends ListenerAdapter {
                 this.commandMapper.get(event.getName()).execute(event);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getMessage(), e);
         }
     }
     @Override
-    public void onButtonInteraction(ButtonInteractionEvent event)
-    {
+    public void onButtonInteraction(ButtonInteractionEvent event) {
         String id = event.getComponentId();
-        System.out.println("Received Button: " + id);
+        LOGGER.debug("Received Button: " + id);
 
         if(buttonMapper.containsKey(id)) {
             try {
                 this.buttonMapper.get(id).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                System.out.println("Error: " + e.getMessage());
+                LOGGER.warn(e.getMessage(), e);
             }
         }
     }
 
     @Override
     public void onSelectMenuInteraction(@NotNull SelectMenuInteractionEvent event) {
-        System.out.println("Received Select Menu: " + event.getComponentId());
+        LOGGER.debug("Received Select Menu: " + event.getComponentId());
 
         if(menuMapper.containsKey(event.getComponentId())) {
             try {
                 menuMapper.get(event.getComponentId()).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                System.out.println("Error: " + e.getMessage());
+                LOGGER.warn(e.getMessage(), e);
             }
         }
     }
 
     @Override
     public void onModalInteraction(@NotNull ModalInteractionEvent event) {
-        System.out.println("Received Modal: " + event.getModalId());
+        LOGGER.debug("Received Modal: " + event.getModalId());
 
         if(modalMapper.containsKey(event.getModalId())) {
             try {
-                System.out.println("Invoking Modal: " + event.getModalId());
+                LOGGER.debug("Invoking Modal: " + event.getModalId());
                 modalMapper.get(event.getModalId()).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                System.out.println("Error: " + e.getMessage());
+                LOGGER.warn(e.getMessage(), e);
             }
         }
     }
 
     @Override
     public void onUserContextInteraction(UserContextInteractionEvent event) {
-        System.out.println("Received User Context: " + event.getName());
+        LOGGER.debug("Received User Context: " + event.getName());
 
         try {
             if (commandMapper.containsKey(event.getName())) {
                 this.commandMapper.get(event.getName()).execute(event);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getMessage(), e);
         }
     }
 
     @Override
     public void onMessageContextInteraction(MessageContextInteractionEvent event) {
-        System.out.println("Received Message Context: " + event.getName());
+        LOGGER.debug("Received Message Context: " + event.getName());
 
         try {
             if (commandMapper.containsKey(event.getName())) {
                 this.commandMapper.get(event.getName()).execute(event);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getMessage(), e);
         }
     }
 
@@ -365,7 +365,7 @@ public class Curupira extends ListenerAdapter {
     public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
         String key = event.getName() + ":" + event.getFocusedOption().getName();
 
-        System.out.println("Received Command Auto Complete: " + key);
+        LOGGER.debug("Received Command Auto Complete: " + key);
 
         if(autoCompleteMapper.containsKey(key)) {
             List<Choice> choices = autoCompleteMapper.get(key)
