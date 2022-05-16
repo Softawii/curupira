@@ -1,9 +1,10 @@
 plugins {
-    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'java-library'
 }
 
 group 'com.softawii'
-version '1.0-SNAPSHOT'
+version '0.1.0'
 
 repositories {
     mavenCentral()
@@ -16,8 +17,8 @@ dependencies {
     implementation("net.dv8tion:JDA:5.0.0-alpha.11") {
         exclude module: 'opus-java'
     }
-    implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
-    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
+    api 'org.apache.logging.log4j:log4j-api:2.17.2'
+    api 'org.apache.logging.log4j:log4j-core:2.17.2'
     implementation 'org.reflections:reflections:0.10.2'
 }
 
