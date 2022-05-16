@@ -24,6 +24,7 @@ import net.dv8tion.jda.internal.interactions.CommandDataImpl;
 import net.dv8tion.jda.internal.interactions.command.ContextInteractionImpl;
 import org.jetbrains.annotations.NotNull;
 import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
 import org.reflections.scanners.SubTypesScanner;
 
 import java.lang.annotation.Annotation;
@@ -64,7 +65,7 @@ public class Curupira extends ListenerAdapter {
     }
 
     private Set<Class> getClassesInPackage(String pkgName) {
-        Reflections reflections = new Reflections(pkgName, new SubTypesScanner(false));
+        Reflections reflections = new Reflections(pkgName, Scanners.SubTypes.filterResultsBy(s -> true));
         return new HashSet<>(reflections.getSubTypesOf(Object.class));
     }
 
