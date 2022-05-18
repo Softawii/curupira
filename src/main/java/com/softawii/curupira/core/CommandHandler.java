@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.components.Modal;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -36,14 +37,16 @@ public class CommandHandler {
 
     private final String          name;
     private final String          description;
+    private final Modal           modal;
 
-    public CommandHandler(Method method, Permission[] permissions, Environment environment, IGroup IGroup, String name, String description) {
+    public CommandHandler(Method method, Permission[] permissions, Environment environment, IGroup IGroup, String name, String description, Modal modal) {
         this.method      = method;
         this.permissions = permissions;
         this.environment = environment;
-        this.IGroup = IGroup;
+        this.IGroup      = IGroup;
         this.name        = name;
         this.description = description;
+        this.modal       = modal;
     }
 
     private boolean canExecute(ChannelType channelType, Member member) throws InvalidChannelTypeException, MissingPermissionsException {
@@ -79,7 +82,8 @@ public class CommandHandler {
     public void execute(SlashCommandInteractionEvent event) {
         try {
             if (canExecute(event.getChannelType(), event.getMember())) {
-                method.invoke(null, event);
+                if(modal == null) method.invoke(null, event);
+                else event.replyModal(modal).queue();
             }
         } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
             e.printStackTrace();
@@ -89,7 +93,8 @@ public class CommandHandler {
     public void execute(GenericCommandInteractionEvent event) {
         try {
             if (canExecute(event.getChannelType(), event.getMember())) {
-                method.invoke(null, event);
+                if(modal == null) method.invoke(null, event);
+                else event.replyModal(modal).queue();
             }
         } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
             e.printStackTrace();
