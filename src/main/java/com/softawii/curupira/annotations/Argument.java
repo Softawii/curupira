@@ -8,6 +8,12 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(Arguments.class)
 public @interface Argument {
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Choice {
+        String key();
+        String value() default "";
+    }
     String name()             default "";
     String description()      default "";
     boolean required()        default false;

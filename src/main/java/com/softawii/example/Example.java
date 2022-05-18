@@ -24,10 +24,10 @@ public class Example {
     private static final String strMenu = "menu:class";
 
     @Command(description="Command Description", permissions={})
-    @Argument(name="name", description="Name", required=true, type= OptionType.STRING, choices = {@Choice(key="John"), @Choice(key="Jane")})
+    @Argument(name="name", description="Name", required=true, type= OptionType.STRING, choices = {@Argument.Choice(key="John"), @Argument.Choice(key="Jane")})
     @Argument(name="age", description="Age", required=true, type=OptionType.INTEGER,
             hasAutoComplete = true,
-            choices={@Choice(key="Um", value="1"), @Choice(key="Dois", value="2"), @Choice(key="Tres", value="3"), @Choice(key="Quatro", value="4"), @Choice(key="Cinco", value="5")})
+            choices={@Argument.Choice(key="Um", value="1"), @Argument.Choice(key="Um", value="1"), @Argument.Choice(key="Dois", value="2"), @Argument.Choice(key="Tres", value="3"), @Argument.Choice(key="Quatro", value="4")})
     public static void Introduce(SlashCommandInteractionEvent event) {
         String msg = "Hello " + event.getOption("name").getAsString() + "! are you " + event.getOption("age").getAsInt() + " years old?";
 
@@ -41,7 +41,7 @@ public class Example {
 
     @Command(description="Command Description")
     @Range(value=@Argument(name="name", description="name of users", required=false, type=OptionType.STRING,
-            hasAutoComplete = true, choices = {@Choice(key="Yan"), @Choice(key="Eduardo"), @Choice(key="Romulo"), @Choice(key="Nicolas")})
+            hasAutoComplete = true, choices = {@Argument.Choice(key="Yan"), @Argument.Choice(key="Eduardo"), @Argument.Choice(key="Romulo"), @Argument.Choice(key="Nicolas")})
             , min=0, max=15)
     public static void Names(SlashCommandInteractionEvent event) {
 

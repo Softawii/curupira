@@ -2,6 +2,7 @@ package com.softawii.curupira.core;
 
 import com.softawii.curupira.annotations.*;
 import com.softawii.curupira.properties.Environment;
+import com.softawii.curupira.utils.ParserCallback;
 import com.softawii.curupira.utils.Utils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -68,23 +69,20 @@ public class Curupira extends ListenerAdapter {
         LOGGER.info("Curupira initialized");
     }
 
-    private Set<Class> getClassesInPackage(String pkgName) {
-        LOGGER.debug("Searching for classes in package '" + pkgName + "'");
-        Reflections reflections = new Reflections(pkgName, Scanners.SubTypes.filterResultsBy(s -> true));
-        return new HashSet<>(reflections.getSubTypesOf(Object.class));
-    }
-
     private void setPackage(String pkgName) {
-        Set<Class> classes = getClassesInPackage(pkgName);
+        Set<Class> classes = Utils.getClassesInPackage(pkgName);
+
+        // Clean
+        this.JDA.updateCommands().addCommands().queue();
 
         // For each class in the package that is a group
         classes.stream().filter(cls -> cls.isAnnotationPresent(Group.class)).forEach(cls -> {
             LOGGER.debug("Found Group: " + cls.getSimpleName());
 
             addCommands(cls);
-            getMethodsAnnotatedBy(cls, Button.class, buttonMapper);
-            getMethodsAnnotatedBy(cls, Menu.class  , menuMapper);
-            getMethodsAnnotatedBy(cls, Modal.class , modalMapper);
+            Utils.getMethodsAnnotatedBy(cls, Button.class, buttonMapper);
+            Utils.getMethodsAnnotatedBy(cls, Menu.class  , menuMapper);
+            Utils.getMethodsAnnotatedBy(cls, Modal.class , modalMapper);
         });
     }
 
@@ -98,38 +96,6 @@ public class Curupira extends ListenerAdapter {
         commands.forEach(command -> {
             JDA.upsertCommand(command).queue();
         });
-    }
-
-    private <T extends Annotation> void getMethodsAnnotatedBy(Class cls, Class<T> annotationClass, Map<String, Method> mapper) {
-        Arrays.stream(cls.getDeclaredMethods())
-                .filter(method -> method.isAnnotationPresent(annotationClass))
-                .forEach(method -> {
-                    T annotation = method.getAnnotation(annotationClass);
-                    String id = getID(annotation, method.getName());
-                    if(mapper.containsKey(id)) {
-                        throw LOGGER.throwing(new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists"));
-                    }
-
-                    mapper.put(id, method);
-                    LOGGER.debug("Found " + annotationClass.getSimpleName() + ": " + id);
-                });
-    }
-
-    private <T extends Annotation> String getID(T annotation, String defaultID) {
-        if(annotation instanceof Button) {
-            String id = ((Button) annotation).id();
-            return id.isBlank() ? defaultID : id;
-        }
-        else if(annotation instanceof Menu) {
-            String id = ((Menu) annotation).id();
-            return id.isBlank() ? defaultID : id;
-        }
-        else if(annotation instanceof Modal) {
-            String id = ((Modal) annotation).id();
-            return id.isBlank() ? defaultID : id;
-        } else {
-            throw LOGGER.throwing(new RuntimeException("Annotation not supported"));
-        }
     }
 
     @NotNull
@@ -147,16 +113,21 @@ public class Curupira extends ListenerAdapter {
 
             List<OptionData> options = new ArrayList<>();
 
+            ParserCallback callback = (key, value) -> {
+                if(autoCompleteMapper.containsKey(key)) throw new RuntimeException("Argument " + '"' + key + '"' + " already mapped");
+                autoCompleteMapper.put(key, value);
+            };
+
             // One Argument or Multiple Arguments
             if (method.isAnnotationPresent(Argument.class)) {
                 Argument argument = method.getAnnotation(Argument.class);
-                options.add(parserArgument(argument, name));
+                options.add(Utils.parserArgument(argument, name, callback));
 
             } else if (method.isAnnotationPresent(Arguments.class)) {
                 Argument[] arguments = method.getAnnotation(Arguments.class).value();
 
                 for (Argument argument : arguments) {
-                    OptionData optionData = parserArgument(argument, name);
+                    OptionData optionData = Utils.parserArgument(argument, name, callback);
                     options.add(optionData);
                 }
             }
@@ -164,13 +135,13 @@ public class Curupira extends ListenerAdapter {
             // Range
             if (method.isAnnotationPresent(Range.class)) {
                 Range range = method.getAnnotation(Range.class);
-                options.addAll(parserRange(range, name));
+                options.addAll(Utils.parserRange(range, name, callback));
             }
             else if(method.isAnnotationPresent(Ranges.class)) {
                 Range[] ranges = method.getAnnotation(Ranges.class).value();
 
                 for(Range range : ranges) {
-                    options.addAll(parserRange(range, name));
+                    options.addAll(Utils.parserRange(range, name, callback));
                 }
             }
 
@@ -186,60 +157,6 @@ public class Curupira extends ListenerAdapter {
 
             return commandData;
         };
-    }
-
-    private OptionData parserArgument(Argument argument, String methodName) {
-        String     name            = argument.name();
-        String     description     = argument.description();
-        boolean    required        = argument.required();
-        OptionType type            = argument.type();
-        boolean    hasAutoComplete = argument.hasAutoComplete();
-
-        OptionData optionData = new OptionData(type, name, description, required, hasAutoComplete);
-
-        if(!hasAutoComplete) {
-            optionData.addChoices(Utils.getChoices(argument.choices(), type));
-        } else {
-            String key = methodName + ":" +  name;
-            if(autoCompleteMapper.containsKey(key)) throw LOGGER.throwing(new RuntimeException("Command with name: " + name + " already exists"));
-            autoCompleteMapper.put(key, Utils.getChoices(argument.choices(), argument.type()));
-        }
-        return optionData;
-    }
-
-    private List<OptionData> parserRange(Range range, String methodName) {
-        Argument argument = range.value();
-        int min = range.min();
-        int max = range.max();
-        int step = range.steps();
-
-        ArrayList<OptionData> options = new ArrayList<>();
-
-        String description = argument.description();
-        boolean required = argument.required();
-        OptionType type = argument.type();
-        boolean hasAutoComplete = argument.hasAutoComplete();
-        List<Choice> choices = Utils.getChoices(argument.choices(), type);
-
-        if(step <= 0) throw LOGGER.throwing(new RuntimeException("Steps must be greater than 0"));
-
-        for(int value = min; value <= max; value += step) {
-            String name = argument.name() + value;
-            OptionData optionData = new OptionData(type, name, description, required, hasAutoComplete);
-
-            if (!hasAutoComplete) {
-                optionData.addChoices(choices);
-            } else {
-                String key = methodName + ":" +  name;
-                if(autoCompleteMapper.containsKey(key)) throw LOGGER.throwing(new RuntimeException("AutoComplete with name: " + name + " already exists"));
-
-                autoCompleteMapper.put(key, choices);
-            }
-
-            options.add(optionData);
-        }
-
-        return options;
     }
 
     private MessageEmbed createHelper() {
