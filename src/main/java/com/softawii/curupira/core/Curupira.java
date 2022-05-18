@@ -20,7 +20,10 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.Command.Type;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.components.Modal;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
+import net.dv8tion.jda.internal.interactions.component.TextInputImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -78,7 +81,42 @@ public class Curupira extends ListenerAdapter {
             addCommands(cls);
             Utils.getMethodsAnnotatedBy(cls, IButton.class, buttonMapper);
             Utils.getMethodsAnnotatedBy(cls, IMenu.class  , menuMapper);
-            Utils.getMethodsAnnotatedBy(cls, IModal.class , modalMapper);
+            Utils.getMethodsAnnotatedBy(cls, IModal.class , modalMapper, (modal, method) -> {
+                if(modal.generate() == Type.UNKNOWN) return;
+
+                CommandDataImpl commandData;
+                if(modal.generate() == Type.SLASH) commandData = new CommandDataImpl(modal.id(), modal.description());
+                else                               commandData = new CommandDataImpl(modal.generate(), modal.id());
+
+                String id = modal.id();
+
+                if(commandMapper.containsKey(id)) throw LOGGER.throwing(new RuntimeException("ICommand with name: " + id + " already exists"));
+
+                Permission[] permissions = modal.permissions();
+                Environment  environment = modal.environment();
+                String       name        = id;
+                String       description = modal.description();
+
+                Modal.Builder builder = Modal.create(id, modal.title());
+
+                for(IModal.ITextInput textInput : modal.textInputs()) {
+                    TextInput input = TextInput.create(textInput.id(), textInput.label(), textInput.style())
+                            .setPlaceholder(textInput.placeholder())
+                            .setMinLength(textInput.minLength())
+                            .setMaxLength(textInput.maxLength())
+                            .setRequired(textInput.required())
+                            .build();
+                    builder.addActionRow(input);
+                }
+
+                commandMapper.put(id, new CommandHandler(method, permissions, environment,
+                                                        (IGroup) cls.getAnnotation(IGroup.class),
+                                                        name, description, builder.build()));
+
+                this.JDA.upsertCommand(commandData).queue();
+
+                LOGGER.debug("Added IModal as a Command: " + id);
+            });
         });
     }
 
@@ -149,7 +187,7 @@ public class Curupira extends ListenerAdapter {
             if(commandMapper.containsKey(name)) {
                 throw LOGGER.throwing(new RuntimeException("ICommand with name: " + name + " already exists"));
             }
-            commandMapper.put(name, new CommandHandler(method, permissions, environment, IGroup, name, description));
+            commandMapper.put(name, new CommandHandler(method, permissions, environment, IGroup, name, description, null));
 
             return commandData;
         };

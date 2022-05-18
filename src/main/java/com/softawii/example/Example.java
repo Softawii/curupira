@@ -1,11 +1,13 @@
 package com.softawii.example;
 
 import com.softawii.curupira.annotations.*;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
@@ -70,29 +72,8 @@ public class Example {
                 .queue();
     }
 
-    @ICommand(description="ICommand Description", permissions={})
-    public static void Support(SlashCommandInteractionEvent event) {
-        TextInput email = TextInput.create("email", "Email", TextInputStyle.SHORT)
-                .setPlaceholder("Enter your E-mail")
-                .setMinLength(10)
-                .setMaxLength(100) // or setRequiredRange(10, 100)
-                .build();
-
-        TextInput body = TextInput.create("body", "Body", TextInputStyle.PARAGRAPH)
-                .setPlaceholder("Your concerns go here")
-                .setMinLength(30)
-                .setMaxLength(1000)
-                .build();
-
-        net.dv8tion.jda.api.interactions.components.Modal modal = net.dv8tion.jda.api.interactions.components.Modal.create("support", "Support")
-                .addActionRows(ActionRow.of(email), ActionRow.of(body))
-                .build();
-
-        event.replyModal(modal).queue();
-    }
-
-    @ICommand(description="ICommand Description", permissions={})
-    public static void Foo(SlashCommandInteractionEvent event) {
+    @ICommand(description="ICommand Description", permissions={Permission.ADMINISTRATOR})
+    public static void Bar(SlashCommandInteractionEvent event) {
         System.out.println("hi");
 
         TextInput name = TextInput.create("name", "Name", TextInputStyle.SHORT)
@@ -101,19 +82,25 @@ public class Example {
                 .setMaxLength(100) // or setRequiredRange(10, 100)
                 .build();
 
+        TextInput age = TextInput.create("age", "Age", TextInputStyle.SHORT)
+                .setPlaceholder("Enter your Name")
+                .setMinLength(10)
+                .setMaxLength(100) // or setRequiredRange(10, 100)
+                .build();
+
         net.dv8tion.jda.api.interactions.components.Modal modal = net.dv8tion.jda.api.interactions.components.Modal.create("support", "Support")
-                .addActionRows(ActionRow.of(name))
+                .addActionRow(name)
+                .addActionRow(age)
                 .build();
 
         event.replyModal(modal).queue();
     }
 
-    @IModal(id="support")
+    @IModal(id="support", title="Support", description="Support Description", generate=Command.Type.SLASH,
+        textInputs = {@IModal.ITextInput(id="name", label="Name", style=TextInputStyle.SHORT, placeholder="Enter your Name", minLength=3, maxLength=100, required=true)})
     public static void Support(@NotNull ModalInteractionEvent event) {
-        String email = event.getValue("email").getAsString();
-        String body = event.getValue("body").getAsString();
-
-        event.reply("Thanks for your request!").setEphemeral(true).queue();
+        String name = event.getValue("name").getAsString();
+        event.reply("Thanks for your request " + name).setEphemeral(true).queue();
     }
 
     @IButton(id="Confirm")

@@ -62,6 +62,10 @@ public class Utils {
     }
 
     public static <T extends Annotation> void getMethodsAnnotatedBy(Class cls, Class<T> annotationClass, Map<String, Method> mapper) {
+        getMethodsAnnotatedBy(cls, annotationClass, mapper, null);
+    }
+
+    public static <T extends Annotation> void getMethodsAnnotatedBy(Class cls, Class<T> annotationClass, Map<String, Method> mapper, AnnotatedByCallback<T> callback) {
         Arrays.stream(cls.getDeclaredMethods())
             .filter(method -> method.isAnnotationPresent(annotationClass))
             .forEach(method -> {
@@ -72,6 +76,7 @@ public class Utils {
                 }
 
                 mapper.put(id, method);
+                if(callback != null) callback.operation(annotation, method);
                 LOGGER.debug("Found " + annotationClass.getSimpleName() + ": " + id);
             });
     }
