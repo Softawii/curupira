@@ -2,7 +2,6 @@ package com.softawii.example;
 
 import com.softawii.curupira.annotations.*;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -18,16 +17,16 @@ import java.util.ArrayList;
 
 import static net.dv8tion.jda.api.interactions.components.buttons.Button.*;
 
-@Group(name="Group 1", description="Group Description")
+@IGroup(name="IGroup 1", description="IGroup Description")
 public class Example {
 
     private static final String strMenu = "menu:class";
 
-    @Command(description="Command Description", permissions={})
-    @Argument(name="name", description="Name", required=true, type= OptionType.STRING, choices = {@Argument.Choice(key="John"), @Argument.Choice(key="Jane")})
-    @Argument(name="age", description="Age", required=true, type=OptionType.INTEGER,
+    @ICommand(description="ICommand Description", permissions={})
+    @IArgument(name="name", description="Name", required=true, type= OptionType.STRING, choices = {@IArgument.Choice(key="John"), @IArgument.Choice(key="Jane")})
+    @IArgument(name="age", description="Age", required=true, type=OptionType.INTEGER,
             hasAutoComplete = true,
-            choices={@Argument.Choice(key="Um", value="1"), @Argument.Choice(key="Um", value="1"), @Argument.Choice(key="Dois", value="2"), @Argument.Choice(key="Tres", value="3"), @Argument.Choice(key="Quatro", value="4")})
+            choices={@IArgument.Choice(key="Um", value="1"), @IArgument.Choice(key="Um", value="1"), @IArgument.Choice(key="Dois", value="2"), @IArgument.Choice(key="Tres", value="3"), @IArgument.Choice(key="Quatro", value="4")})
     public static void Introduce(SlashCommandInteractionEvent event) {
         String msg = "Hello " + event.getOption("name").getAsString() + "! are you " + event.getOption("age").getAsInt() + " years old?";
 
@@ -39,9 +38,9 @@ public class Example {
             .queue();
     }
 
-    @Command(description="Command Description")
-    @Range(value=@Argument(name="name", description="name of users", required=false, type=OptionType.STRING,
-            hasAutoComplete = true, choices = {@Argument.Choice(key="Yan"), @Argument.Choice(key="Eduardo"), @Argument.Choice(key="Romulo"), @Argument.Choice(key="Nicolas")})
+    @ICommand(description="ICommand Description")
+    @IRange(value=@IArgument(name="name", description="name of users", required=false, type=OptionType.STRING,
+            hasAutoComplete = true, choices = {@IArgument.Choice(key="Yan"), @IArgument.Choice(key="Eduardo"), @IArgument.Choice(key="Romulo"), @IArgument.Choice(key="Nicolas")})
             , min=0, max=15)
     public static void Names(SlashCommandInteractionEvent event) {
 
@@ -55,7 +54,7 @@ public class Example {
         event.reply("Names: " + String.join(", ", names)).queue();
     }
 
-    @Command(description="Command Description", permissions={}, type= net.dv8tion.jda.api.interactions.commands.Command.Type.MESSAGE)
+    @ICommand(description="ICommand Description", permissions={})
     public static void Menu(MessageContextInteractionEvent event) {
         SelectMenu menu = SelectMenu.create(strMenu)
                 .setRequiredRange(1, 25)
@@ -71,7 +70,7 @@ public class Example {
                 .queue();
     }
 
-    @Command(description="Command Description", permissions={})
+    @ICommand(description="ICommand Description", permissions={})
     public static void Support(SlashCommandInteractionEvent event) {
         TextInput email = TextInput.create("email", "Email", TextInputStyle.SHORT)
                 .setPlaceholder("Enter your E-mail")
@@ -92,7 +91,24 @@ public class Example {
         event.replyModal(modal).queue();
     }
 
-    @Modal(id="support")
+    @ICommand(description="ICommand Description", permissions={})
+    public static void Foo(SlashCommandInteractionEvent event) {
+        System.out.println("hi");
+
+        TextInput name = TextInput.create("name", "Name", TextInputStyle.SHORT)
+                .setPlaceholder("Enter your Name")
+                .setMinLength(10)
+                .setMaxLength(100) // or setRequiredRange(10, 100)
+                .build();
+
+        net.dv8tion.jda.api.interactions.components.Modal modal = net.dv8tion.jda.api.interactions.components.Modal.create("support", "Support")
+                .addActionRows(ActionRow.of(name))
+                .build();
+
+        event.replyModal(modal).queue();
+    }
+
+    @IModal(id="support")
     public static void Support(@NotNull ModalInteractionEvent event) {
         String email = event.getValue("email").getAsString();
         String body = event.getValue("body").getAsString();
@@ -100,7 +116,7 @@ public class Example {
         event.reply("Thanks for your request!").setEphemeral(true).queue();
     }
 
-    @Button(id="Confirm")
+    @IButton(id="Confirm")
     public static void Confirm(ButtonInteractionEvent event) {
 
         event.editMessage("Are you sure??")
@@ -110,12 +126,12 @@ public class Example {
             .queue();
     }
 
-    @Button(id="Cancel")
+    @IButton(id="Cancel")
     public static void Cancel(ButtonInteractionEvent event) {
         event.reply("Canceled").queue();
     }
 
-    @Menu(id=strMenu)
+    @IMenu(id=strMenu)
     public static void Menu(@NotNull SelectMenuInteractionEvent event) {
         System.out.println("I'm here");
         event.getInteraction().getSelectedOptions().stream().map(option -> option.getLabel()).reduce((a, b) -> a + " " + b).ifPresent(s -> event.reply(s).queue());

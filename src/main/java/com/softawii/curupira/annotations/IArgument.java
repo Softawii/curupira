@@ -6,8 +6,8 @@ import java.lang.annotation.*;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(Arguments.class)
-public @interface Argument {
+@Repeatable(IArguments.class)
+public @interface IArgument {
 
     @Retention(RetentionPolicy.RUNTIME)
     @interface Choice {

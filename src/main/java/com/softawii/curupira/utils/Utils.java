@@ -1,7 +1,6 @@
 package com.softawii.curupira.utils;
 
 import com.softawii.curupira.annotations.*;
-import com.softawii.curupira.core.Curupira;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -18,10 +17,10 @@ public class Utils {
 
     private static final Logger LOGGER = LogManager.getLogger(Utils.class);
 
-    public static List<Command.Choice> getChoices(Argument.Choice[] args, OptionType optionType) {
+    public static List<Command.Choice> getChoices(IArgument.Choice[] args, OptionType optionType) {
         // Long, Double, String
         ArrayList<Command.Choice> choices = new ArrayList<>();
-        for(Argument.Choice arg : args) {
+        for(IArgument.Choice arg : args) {
             String key = arg.key();
             String value = arg.value().isBlank() ? key : arg.value();
 
@@ -46,16 +45,16 @@ public class Utils {
     }
 
     private static <T extends Annotation> String getID(T annotation, String defaultID) {
-        if(annotation instanceof Button) {
-            String id = ((Button) annotation).id();
+        if(annotation instanceof IButton) {
+            String id = ((IButton) annotation).id();
             return id.isBlank() ? defaultID : id;
         }
-        else if(annotation instanceof Menu) {
-            String id = ((Menu) annotation).id();
+        else if(annotation instanceof IMenu) {
+            String id = ((IMenu) annotation).id();
             return id.isBlank() ? defaultID : id;
         }
-        else if(annotation instanceof Modal) {
-            String id = ((Modal) annotation).id();
+        else if(annotation instanceof IModal) {
+            String id = ((IModal) annotation).id();
             return id.isBlank() ? defaultID : id;
         } else {
             throw LOGGER.throwing(new RuntimeException("Annotation not supported"));
@@ -77,7 +76,7 @@ public class Utils {
             });
     }
 
-    public static OptionData parserArgument(Argument argument, String methodName, ParserCallback callback) {
+    public static OptionData parserArgument(IArgument argument, String methodName, ParserCallback callback) {
         String     name            = argument.name();
         String     description     = argument.description();
         boolean    required        = argument.required();
@@ -95,24 +94,24 @@ public class Utils {
         return optionData;
     }
 
-    public static List<OptionData> parserRange(Range range, String methodName, ParserCallback callback) {
-        Argument argument = range.value();
+    public static List<OptionData> parserRange(IRange range, String methodName, ParserCallback callback) {
+        IArgument IArgument = range.value();
         int min = range.min();
         int max = range.max();
         int step = range.steps();
 
         ArrayList<OptionData> options = new ArrayList<>();
 
-        String description = argument.description();
-        boolean required = argument.required();
-        OptionType type = argument.type();
-        boolean hasAutoComplete = argument.hasAutoComplete();
-        List<Command.Choice> choices = Utils.getChoices(argument.choices(), type);
+        String description = IArgument.description();
+        boolean required = IArgument.required();
+        OptionType type = IArgument.type();
+        boolean hasAutoComplete = IArgument.hasAutoComplete();
+        List<Command.Choice> choices = Utils.getChoices(IArgument.choices(), type);
 
         if(step <= 0) throw LOGGER.throwing(new RuntimeException("Steps must be greater than 0"));
 
         for(int value = min; value <= max; value += step) {
-            String name = argument.name() + value;
+            String name = IArgument.name() + value;
             OptionData optionData = new OptionData(type, name, description, required, hasAutoComplete);
 
             if (!hasAutoComplete) {

@@ -1,6 +1,6 @@
 package com.softawii.curupira.core;
 
-import com.softawii.curupira.annotations.Group;
+import com.softawii.curupira.annotations.IGroup;
 import com.softawii.curupira.exceptions.InvalidChannelTypeException;
 import com.softawii.curupira.exceptions.MissingPermissionsException;
 import com.softawii.curupira.properties.Environment;
@@ -32,16 +32,16 @@ public class CommandHandler {
     private final Method          method;
     private final Permission[]    permissions;
     private final Environment     environment;
-    private final Group           group;
+    private final IGroup IGroup;
 
     private final String          name;
     private final String          description;
 
-    public CommandHandler(Method method, Permission[] permissions, Environment environment, Group group, String name, String description) {
+    public CommandHandler(Method method, Permission[] permissions, Environment environment, IGroup IGroup, String name, String description) {
         this.method      = method;
         this.permissions = permissions;
         this.environment = environment;
-        this.group       = group;
+        this.IGroup = IGroup;
         this.name        = name;
         this.description = description;
     }
@@ -96,8 +96,8 @@ public class CommandHandler {
         }
     }
 
-    public Group getGroup() {
-        return group;
+    public IGroup getGroup() {
+        return IGroup;
     }
 
     public String getName() {
