@@ -15,7 +15,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-public class CommandHandler {
+/**
+ * A package-private class that is used to handle commands.
+ *
+ * <p>
+ *     This class is responsible for handling commands. It is responsible for checking permissions, environment and
+ *     call the method or throws an error if something is wrong.
+ * </p>
+ */
+class CommandHandler {
 
     private static final ChannelType[] PUBLIC_CHANNELS = {
             ChannelType.GUILD_PUBLIC_THREAD,
@@ -39,7 +47,7 @@ public class CommandHandler {
     private final String          description;
     private final Modal           modal;
 
-    public CommandHandler(Method method, Permission[] permissions, Environment environment, IGroup IGroup, String name, String description, Modal modal) {
+    CommandHandler(Method method, Permission[] permissions, Environment environment, IGroup IGroup, String name, String description, Modal modal) {
         this.method      = method;
         this.permissions = permissions;
         this.environment = environment;
@@ -49,6 +57,15 @@ public class CommandHandler {
         this.modal       = modal;
     }
 
+    /**
+     * Checks if the command can be executed in the given channel.
+     *
+     * @param channelType
+     * @param member
+     * @return true if the command can be executed in the given channel, false otherwise.
+     * @throws InvalidChannelTypeException if the channel type is not supported.
+     * @throws MissingPermissionsException if the user does not have the required permissions.
+     */
     private boolean canExecute(ChannelType channelType, Member member) throws InvalidChannelTypeException, MissingPermissionsException {
         // Check for Private Channels
         if(environment.equals(Environment.PRIVATE)) {
@@ -79,17 +96,10 @@ public class CommandHandler {
         return true;
     }
 
-    public void execute(SlashCommandInteractionEvent event) {
-        try {
-            if (canExecute(event.getChannelType(), event.getMember())) {
-                if(modal == null) method.invoke(null, event);
-                else event.replyModal(modal).queue();
-            }
-        } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
-            e.printStackTrace();
-        }
-    }
-
+    /**
+     * Executes the command or just print the stacktrace. (This is used for debugging, but it's temporary)
+     * @param event
+     */
     public void execute(GenericCommandInteractionEvent event) {
         try {
             if (canExecute(event.getChannelType(), event.getMember())) {

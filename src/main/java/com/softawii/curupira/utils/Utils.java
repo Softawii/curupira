@@ -17,10 +17,18 @@ public class Utils {
 
     private static final Logger LOGGER = LogManager.getLogger(Utils.class);
 
-    public static List<Command.Choice> getChoices(IArgument.Choice[] args, OptionType optionType) {
+    /**
+     * This function is used to extract the choices from the annotation.
+     *
+     * @param args Array of IChoices annotations
+     * @param optionType the option type from the command
+     * @return a map of choices
+     * @throws RuntimeException if the option type is not supported or the cast fails
+     */
+    public static List<Command.Choice> getChoices(IArgument.IChoice[] args, OptionType optionType) {
         // Long, Double, String
         ArrayList<Command.Choice> choices = new ArrayList<>();
-        for(IArgument.Choice arg : args) {
+        for(IArgument.IChoice arg : args) {
             String key = arg.key();
             String value = arg.value().isBlank() ? key : arg.value();
 
@@ -38,6 +46,11 @@ public class Utils {
         return choices;
     }
 
+    /**
+     * This function is used to extract all the classes in the package.
+     * @param pkgName
+     * @return All the classes in the package
+     */
     public static Set<Class> getClassesInPackage(String pkgName) {
         LOGGER.debug("Searching for classes in package '" + pkgName + "'");
         Reflections reflections = new Reflections(pkgName, Scanners.SubTypes.filterResultsBy(s -> true));
@@ -61,10 +74,25 @@ public class Utils {
         }
     }
 
+    /**
+     * This function is used to extract methods annotated by a specific annotation.
+     * @param cls The class to search in
+     * @param annotationClass The annotation class
+     * @param mapper The map to store the methods in
+     * @param <T> The annotation class
+     */
     public static <T extends Annotation> void getMethodsAnnotatedBy(Class cls, Class<T> annotationClass, Map<String, Method> mapper) {
         getMethodsAnnotatedBy(cls, annotationClass, mapper, null);
     }
 
+    /**
+     * This function is used to extract methods annotated by a specific annotation.
+     * @param cls The class to search in
+     * @param annotationClass The annotation class
+     * @param mapper The map to store the methods in
+     * @param callback The callback to call when a method is found, it's not necessary to pass the callback if you don't want to
+     * @param <T> The annotation class
+     */
     public static <T extends Annotation> void getMethodsAnnotatedBy(Class cls, Class<T> annotationClass, Map<String, Method> mapper, AnnotatedByCallback<T> callback) {
         Arrays.stream(cls.getDeclaredMethods())
             .filter(method -> method.isAnnotationPresent(annotationClass))
@@ -81,6 +109,13 @@ public class Utils {
             });
     }
 
+    /**
+     * This function is used to parse an Argument into an OptionData.
+     * @param argument The annotation
+     * @param methodName The method name
+     * @param callback The callback to pass choices, it's not necessary to pass the callback if you don't want to
+     * @return The Argument parsed to OptionData
+     */
     public static OptionData parserArgument(IArgument argument, String methodName, ParserCallback callback) {
         String     name            = argument.name();
         String     description     = argument.description();
@@ -99,6 +134,13 @@ public class Utils {
         return optionData;
     }
 
+    /**
+     * This function is used to parse a Range of Argument into a list of OptionData
+     * @param range
+     * @param methodName
+     * @param callback
+     * @return
+     */
     public static List<OptionData> parserRange(IRange range, String methodName, ParserCallback callback) {
         IArgument IArgument = range.value();
         int min = range.min();
@@ -125,7 +167,6 @@ public class Utils {
                 String key = methodName + ":" +  name;
                 callback.operation(key, choices);
             }
-
             options.add(optionData);
         }
 

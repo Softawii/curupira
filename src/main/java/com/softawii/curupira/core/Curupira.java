@@ -43,6 +43,7 @@ public class Curupira extends ListenerAdapter {
     private final Map<String, Method> buttonMapper;
     private final Map<String, Method> menuMapper;
     private final Map<String, Method> modalMapper;
+    private final Map<String, Modal>  modals;
     private final Map<String, List<Choice>> autoCompleteMapper;
     private final MessageEmbed helpEmbed;
 
@@ -54,6 +55,7 @@ public class Curupira extends ListenerAdapter {
         menuMapper          = new HashMap<>();
         modalMapper         = new HashMap<>();
         autoCompleteMapper  = new HashMap<>();
+        modals              = new HashMap<>();
 
         // Args
         this.JDA = JDA;
@@ -68,6 +70,22 @@ public class Curupira extends ListenerAdapter {
         LOGGER.info("Curupira initialized");
     }
 
+    /**
+     * @param id The id of the command
+     * @return Modal that was generated in the start of the class.
+     */
+    public Modal getModal(String id) {
+        return modals.get(id);
+    }
+
+    /**
+     * <p>
+     *      This is used to register all the commands in the package.
+     *      We will check for IGroup, ICommand, IMenu, IModal and
+     *      will start to organize everything in the maps.
+     * </p>
+     * @param pkgName The package name to scan for commands.
+     */
     private void setPackage(String pkgName) {
         Set<Class> classes = Utils.getClassesInPackage(pkgName);
 
@@ -82,6 +100,24 @@ public class Curupira extends ListenerAdapter {
             Utils.getMethodsAnnotatedBy(cls, IButton.class, buttonMapper);
             Utils.getMethodsAnnotatedBy(cls, IMenu.class  , menuMapper);
             Utils.getMethodsAnnotatedBy(cls, IModal.class , modalMapper, (modal, method) -> {
+
+                Modal.Builder builder = Modal.create(modal.id(), modal.title());
+
+                for(IModal.ITextInput textInput : modal.textInputs()) {
+                    TextInput input = TextInput.create(textInput.id(), textInput.label(), textInput.style())
+                            .setPlaceholder(textInput.placeholder())
+                            .setMinLength(textInput.minLength())
+                            .setMaxLength(textInput.maxLength())
+                            .setRequired(textInput.required())
+                            .build();
+                    builder.addActionRow(input);
+                }
+                Modal local_modal = builder.build();
+
+                if(modals.containsKey(modal.id())) throw new RuntimeException("Modal with id " + modal.id() + " already exists in modals map");
+                modals.put(modal.id(), local_modal);
+
+                // Wants to add the modal to the command mapper ????
                 if(modal.generate() == Type.UNKNOWN) return;
 
                 CommandDataImpl commandData;
@@ -97,21 +133,10 @@ public class Curupira extends ListenerAdapter {
                 String       name        = id;
                 String       description = modal.description();
 
-                Modal.Builder builder = Modal.create(id, modal.title());
-
-                for(IModal.ITextInput textInput : modal.textInputs()) {
-                    TextInput input = TextInput.create(textInput.id(), textInput.label(), textInput.style())
-                            .setPlaceholder(textInput.placeholder())
-                            .setMinLength(textInput.minLength())
-                            .setMaxLength(textInput.maxLength())
-                            .setRequired(textInput.required())
-                            .build();
-                    builder.addActionRow(input);
-                }
 
                 commandMapper.put(id, new CommandHandler(method, permissions, environment,
                                                         (IGroup) cls.getAnnotation(IGroup.class),
-                                                        name, description, builder.build()));
+                                                        name, description, local_modal));
 
                 this.JDA.upsertCommand(commandData).queue();
 
@@ -193,6 +218,12 @@ public class Curupira extends ListenerAdapter {
         };
     }
 
+    /**
+     * This method will generate the embed of the help command.
+     * It's just run all commands and generate the embed.
+     *
+     * @return The embed of the help command.
+     */
     private MessageEmbed createHelper() {
         EmbedBuilder builder = new EmbedBuilder();
         Map<String, StringBuilder> stringBuilder = new HashMap<>();

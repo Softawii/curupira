@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
@@ -25,10 +24,10 @@ public class Example {
     private static final String strMenu = "menu:class";
 
     @ICommand(description="ICommand Description", permissions={})
-    @IArgument(name="name", description="Name", required=true, type= OptionType.STRING, choices = {@IArgument.Choice(key="John"), @IArgument.Choice(key="Jane")})
+    @IArgument(name="name", description="Name", required=true, type= OptionType.STRING, choices = {@IArgument.IChoice(key="John"), @IArgument.IChoice(key="Jane")})
     @IArgument(name="age", description="Age", required=true, type=OptionType.INTEGER,
             hasAutoComplete = true,
-            choices={@IArgument.Choice(key="Um", value="1"), @IArgument.Choice(key="Um", value="1"), @IArgument.Choice(key="Dois", value="2"), @IArgument.Choice(key="Tres", value="3"), @IArgument.Choice(key="Quatro", value="4")})
+            choices={@IArgument.IChoice(key="Um", value="1"), @IArgument.IChoice(key="Um", value="1"), @IArgument.IChoice(key="Dois", value="2"), @IArgument.IChoice(key="Tres", value="3"), @IArgument.IChoice(key="Quatro", value="4")})
     public static void Introduce(SlashCommandInteractionEvent event) {
         String msg = "Hello " + event.getOption("name").getAsString() + "! are you " + event.getOption("age").getAsInt() + " years old?";
 
@@ -42,7 +41,7 @@ public class Example {
 
     @ICommand(description="ICommand Description")
     @IRange(value=@IArgument(name="name", description="name of users", required=false, type=OptionType.STRING,
-            hasAutoComplete = true, choices = {@IArgument.Choice(key="Yan"), @IArgument.Choice(key="Eduardo"), @IArgument.Choice(key="Romulo"), @IArgument.Choice(key="Nicolas")})
+            hasAutoComplete = true, choices = {@IArgument.IChoice(key="Yan"), @IArgument.IChoice(key="Eduardo"), @IArgument.IChoice(key="Romulo"), @IArgument.IChoice(key="Nicolas")})
             , min=0, max=15)
     public static void Names(SlashCommandInteractionEvent event) {
 
