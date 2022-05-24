@@ -61,6 +61,9 @@ public class Curupira extends ListenerAdapter {
         this.JDA = JDA;
         JDA.addEventListener(this);
 
+        // Clean
+        this.JDA.updateCommands().addCommands().queue();
+
         for(String pkg : packages) {
             setPackage(pkg);
         }
@@ -74,8 +77,8 @@ public class Curupira extends ListenerAdapter {
      * @param id The id of the command
      * @return Modal that was generated in the start of the class.
      */
-    public Modal getModal(String id) {
-        return modals.get(id);
+    public Modal.Builder getModal(String id) {
+        return modals.get(id).createCopy();
     }
 
     /**
@@ -89,9 +92,6 @@ public class Curupira extends ListenerAdapter {
     private void setPackage(String pkgName) {
         Set<Class> classes = Utils.getClassesInPackage(pkgName);
 
-        // Clean
-        this.JDA.updateCommands().addCommands().queue();
-
         // For each class in the package that is a group
         classes.stream().filter(cls -> cls.isAnnotationPresent(IGroup.class)).forEach(cls -> {
             LOGGER.debug("Found IGroup: " + cls.getSimpleName());
@@ -104,13 +104,19 @@ public class Curupira extends ListenerAdapter {
                 Modal.Builder builder = Modal.create(modal.id(), modal.title());
 
                 for(IModal.ITextInput textInput : modal.textInputs()) {
-                    TextInput input = TextInput.create(textInput.id(), textInput.label(), textInput.style())
+                    TextInput.Builder input_builder = TextInput.create(textInput.id(), textInput.label(), textInput.style())
                             .setPlaceholder(textInput.placeholder())
-                            .setMinLength(textInput.minLength())
-                            .setMaxLength(textInput.maxLength())
-                            .setRequired(textInput.required())
-                            .build();
-                    builder.addActionRow(input);
+                            .setRequired(textInput.required());
+
+                    if(textInput.maxLength() > 0) {
+                        input_builder.setMaxLength(textInput.maxLength());
+                    }
+
+                    if(textInput.minLength() > 0) {
+                        input_builder.setMinLength(textInput.minLength());
+                    }
+
+                    builder.addActionRow(input_builder.build());
                 }
                 Modal local_modal = builder.build();
 
@@ -160,8 +166,6 @@ public class Curupira extends ListenerAdapter {
     @NotNull
     private Function<Method, CommandDataImpl> getMethodCommandDataFunction(IGroup IGroup) {
         return method -> {
-            LOGGER.debug("Found ICommand: " + method.getName());
-
             ICommand command = method.getAnnotation(ICommand.class);
 
             String name              = (command.name().isBlank() ? method.getName() : command.name()).toLowerCase();
@@ -169,6 +173,8 @@ public class Curupira extends ListenerAdapter {
             Environment environment  = command.environment();
             Permission[] permissions = command.permissions();
             Type type                = command.type();
+
+            LOGGER.debug("Found ICommand: " + name);
 
             List<OptionData> options = new ArrayList<>();
 
@@ -278,8 +284,10 @@ public class Curupira extends ListenerAdapter {
     }
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
-        String id = event.getComponentId();
-        LOGGER.debug("Received IButton: " + id);
+        LOGGER.debug("Received IButton: " + event.getComponentId());
+
+        // KEY: MODAL_ID:ANYTHING...
+        String id = event.getComponentId().split(":")[0];
 
         if(buttonMapper.containsKey(id)) {
             try {
@@ -294,9 +302,12 @@ public class Curupira extends ListenerAdapter {
     public void onSelectMenuInteraction(@NotNull SelectMenuInteractionEvent event) {
         LOGGER.debug("Received Select IMenu: " + event.getComponentId());
 
-        if(menuMapper.containsKey(event.getComponentId())) {
+        // KEY: MODAL_ID:ANYTHING....
+        String key = event.getComponentId().split(":")[0];
+
+        if(menuMapper.containsKey(key)) {
             try {
-                menuMapper.get(event.getComponentId()).invoke(null, event);
+                menuMapper.get(key).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 LOGGER.warn(e.getMessage(), e);
             }
@@ -307,10 +318,13 @@ public class Curupira extends ListenerAdapter {
     public void onModalInteraction(@NotNull ModalInteractionEvent event) {
         LOGGER.debug("Received IModal: " + event.getModalId());
 
-        if(modalMapper.containsKey(event.getModalId())) {
+        // KEY: MODAL_ID:ANYTHING....
+        String key = event.getModalId().split(":")[0];
+
+        if(modalMapper.containsKey(key)) {
             try {
-                LOGGER.debug("Invoking IModal: " + event.getModalId());
-                modalMapper.get(event.getModalId()).invoke(null, event);
+                LOGGER.debug("Invoking IModal: " + key);
+                modalMapper.get(key).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 LOGGER.warn(e.getMessage(), e);
             }
@@ -332,11 +346,12 @@ public class Curupira extends ListenerAdapter {
 
     @Override
     public void onMessageContextInteraction(MessageContextInteractionEvent event) {
-        LOGGER.debug("Received Message Context: " + event.getName());
+        String name = event.getName();
+        LOGGER.debug("Received Message Context: " + name);
 
         try {
-            if (commandMapper.containsKey(event.getName())) {
-                this.commandMapper.get(event.getName()).execute(event);
+            if (commandMapper.containsKey(name)) {
+                this.commandMapper.get(name).execute(event);
             }
         } catch (Exception e) {
             LOGGER.warn(e.getMessage(), e);
