@@ -23,7 +23,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.Modal;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
-import net.dv8tion.jda.internal.interactions.component.TextInputImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -47,8 +46,9 @@ public class Curupira extends ListenerAdapter {
     private final Map<String, List<Choice>> autoCompleteMapper;
     private final MessageEmbed helpEmbed;
     private final boolean reset;
+    private final ExceptionHandler exceptionHandler;
 
-    public Curupira(@NotNull JDA JDA, boolean reset, String @NotNull ... packages) {
+    public Curupira(@NotNull JDA JDA, boolean reset, ExceptionHandler exceptionHandler, String @NotNull ... packages) {
         LOGGER.info("Inicializing Curupira");
         // Init
         commandMapper       = new HashMap<>();
@@ -73,6 +73,8 @@ public class Curupira extends ListenerAdapter {
 
         // Help
         helpEmbed = createHelper();
+
+        this.exceptionHandler = exceptionHandler;
         LOGGER.info("Curupira initialized");
     }
 
@@ -282,6 +284,9 @@ public class Curupira extends ListenerAdapter {
                 this.commandMapper.get(event.getName()).execute(event);
             }
         } catch (Exception e) {
+            if (exceptionHandler != null) {
+                exceptionHandler.handle(e, event);
+            }
             LOGGER.warn(e.getMessage(), e);
         }
     }
@@ -296,6 +301,9 @@ public class Curupira extends ListenerAdapter {
             try {
                 this.buttonMapper.get(id).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
+                if (exceptionHandler != null) {
+                    exceptionHandler.handle(e, event);
+                }
                 LOGGER.warn(e.getMessage(), e);
             }
         }
@@ -312,6 +320,9 @@ public class Curupira extends ListenerAdapter {
             try {
                 menuMapper.get(key).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
+                if (exceptionHandler != null) {
+                    exceptionHandler.handle(e, event);
+                }
                 LOGGER.warn(e.getMessage(), e);
             }
         }
@@ -329,6 +340,9 @@ public class Curupira extends ListenerAdapter {
                 LOGGER.debug("Invoking IModal: " + key);
                 modalMapper.get(key).invoke(null, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
+                if (exceptionHandler != null) {
+                    exceptionHandler.handle(e, event);
+                }
                 LOGGER.warn(e.getMessage(), e);
             }
         }
@@ -343,6 +357,9 @@ public class Curupira extends ListenerAdapter {
                 this.commandMapper.get(event.getName()).execute(event);
             }
         } catch (Exception e) {
+            if (exceptionHandler != null) {
+                exceptionHandler.handle(e, event);
+            }
             LOGGER.warn(e.getMessage(), e);
         }
     }
@@ -357,6 +374,9 @@ public class Curupira extends ListenerAdapter {
                 this.commandMapper.get(name).execute(event);
             }
         } catch (Exception e) {
+            if (exceptionHandler != null) {
+                exceptionHandler.handle(e, event);
+            }
             LOGGER.warn(e.getMessage(), e);
         }
     }
