@@ -1,11 +1,12 @@
 package com.softawii;
 
 import com.softawii.curupira.core.Curupira;
+import com.softawii.curupira.core.ExceptionHandler;
+import com.softawii.example.CustomExceptionHandler;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 
 import javax.security.auth.login.LoginException;
-import java.util.EventListener;
 
 public class Main {
 
@@ -20,8 +21,8 @@ public class Main {
         JDABuilder builder = JDABuilder.createDefault(token);
         JDA JDA = builder.build();
         boolean reset = true;
-
-        Main.curupira = new Curupira(JDA, reset, pkg);
+        ExceptionHandler exceptionHandler = new CustomExceptionHandler();
+        Main.curupira = new Curupira(JDA, reset, exceptionHandler, pkg);
 
         JDA.awaitReady();
     }
