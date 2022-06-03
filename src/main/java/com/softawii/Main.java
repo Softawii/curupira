@@ -8,6 +8,9 @@ import javax.security.auth.login.LoginException;
 import java.util.EventListener;
 
 public class Main {
+
+    public static Curupira curupira;
+
     public static void main(String[] args) throws LoginException, InterruptedException {
 
         String token = "";
@@ -17,9 +20,10 @@ public class Main {
         // We Will Build with Listeners and Slash Commands
         JDABuilder builder = JDABuilder.createDefault(token);
         JDA JDA = builder.build();
-
-        Curupira curupira = new Curupira(JDA, pkg);
+        boolean reset = true;
+        Main.curupira = new Curupira(JDA, reset, pkg);
 
         JDA.awaitReady();
+        System.out.println("Bot is ready as " + JDA.getSelfUser().getName());
     }
 }

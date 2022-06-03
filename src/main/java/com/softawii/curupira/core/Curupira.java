@@ -46,8 +46,9 @@ public class Curupira extends ListenerAdapter {
     private final Map<String, Modal>  modals;
     private final Map<String, List<Choice>> autoCompleteMapper;
     private final MessageEmbed helpEmbed;
+    private final boolean reset;
 
-    public Curupira(@NotNull JDA JDA, String @NotNull ... packages) {
+    public Curupira(@NotNull JDA JDA, boolean resetDiscordCommands, String @NotNull ... packages) {
         LOGGER.info("Inicializing Curupira");
         // Init
         commandMapper       = new HashMap<>();
@@ -57,12 +58,14 @@ public class Curupira extends ListenerAdapter {
         autoCompleteMapper  = new HashMap<>();
         modals              = new HashMap<>();
 
+        this.reset = resetDiscordCommands;
+
         // Args
         this.JDA = JDA;
         JDA.addEventListener(this);
 
-        // Clean
-        this.JDA.updateCommands().addCommands().queue();
+        // Clean - if reset
+        if(this.reset) this.JDA.updateCommands().addCommands().queue();
 
         for(String pkg : packages) {
             setPackage(pkg);
@@ -144,7 +147,7 @@ public class Curupira extends ListenerAdapter {
                                                         (IGroup) cls.getAnnotation(IGroup.class),
                                                         name, description, local_modal));
 
-                this.JDA.upsertCommand(commandData).queue();
+                if(this.reset) this.JDA.upsertCommand(commandData).queue();
 
                 LOGGER.debug("Added IModal as a Command: " + id);
             });
@@ -159,7 +162,7 @@ public class Curupira extends ListenerAdapter {
                 .collect(Collectors.toList());
 
         commands.forEach(command -> {
-            JDA.upsertCommand(command).queue();
+            if(this.reset) JDA.upsertCommand(command).queue();
         });
     }
 
@@ -263,7 +266,7 @@ public class Curupira extends ListenerAdapter {
             builder.addField(groupName, localBuilder.toString(), false);
         });
 
-        this.JDA.upsertCommand("help", "help").queue();
+        if(this.reset) this.JDA.upsertCommand("help", "help").queue();
 
         return builder.build();
     }
