@@ -44,17 +44,15 @@ class CommandHandler {
     private final Method          method;
     private final Permission[]    permissions;
     private final Environment     environment;
-    private final IGroup IGroup;
 
     private final String          name;
     private final String          description;
     private final Modal           modal;
 
-    CommandHandler(Method method, Permission[] permissions, Environment environment, IGroup IGroup, String name, String description, Modal modal) {
+    CommandHandler(Method method, Permission[] permissions, Environment environment, String name, String description, Modal modal) {
         this.method      = method;
         this.permissions = permissions;
         this.environment = environment;
-        this.IGroup      = IGroup;
         this.name        = name;
         this.description = description;
         this.modal       = modal;
@@ -144,10 +142,6 @@ class CommandHandler {
         } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
             e.printStackTrace();
         }
-    }
-
-    public IGroup getGroup() {
-        return IGroup;
     }
 
     public String getName() {
