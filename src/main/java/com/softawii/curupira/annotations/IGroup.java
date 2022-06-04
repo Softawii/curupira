@@ -20,4 +20,20 @@ import java.lang.annotation.Target;
 public @interface IGroup {
     String name()        default "";
     String description() default "";
+
+    /**
+     *
+     * <p>
+     *     If the group is hidden you will not see the group as part of the command.
+     *
+     *     Hidden:
+     *     /create
+     *
+     *     Not Hidden:
+     *     /permission create
+     *
+     * </p>
+     *
+     */
+    boolean hidden() default true;
 }
