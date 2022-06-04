@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.interactions.components.Modal;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.utils.data.SerializableData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +31,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Curupira extends ListenerAdapter {
 
@@ -93,7 +95,7 @@ public class Curupira extends ListenerAdapter {
         // For each class in the package that is a group
         List<Class> groups = classes.stream().filter(cls -> cls.isAnnotationPresent(IGroup.class)).collect(Collectors.toList());
 
-        for(Class group : groups) {
+        for(Class<?> group : groups) {
             // We have 2 levels of hierarchy
             /*
                 1. Outer class (can have commands (methods) or subcommand groups (inner classes))
@@ -128,9 +130,13 @@ public class Curupira extends ListenerAdapter {
                  method (when outer class is hidden)
              */
 
-            IGroup igroup = (IGroup) group.getAnnotation(IGroup.class);
+            IGroup igroup = group.getAnnotation(IGroup.class);
             boolean hidden = igroup.hidden();
 
+            // Modal, Button, Menu section
+            registerModalsButtonsAndMenus(group);
+
+            // Command Section
             // Hidden -> Creating Individual Command
             if(hidden) {
                 LOGGER.info(String.format("Registering Free Commands in %s", igroup.name()));
@@ -141,13 +147,13 @@ public class Curupira extends ListenerAdapter {
                 mapMethods(methods, null, "");
 
                 // If it's Hidden, and we have an Inner Class, that is a group
-                List<Class> innerClasses = List.of(group.getDeclaredClasses()).stream().filter(cls -> cls.isAnnotationPresent(ISubGroup.class)).toList();
-                for(Class innerClass : innerClasses) {
+                List<Class<?>> innerClasses = Stream.of(group.getDeclaredClasses()).filter(cls -> cls.isAnnotationPresent(ISubGroup.class)).toList();
+                for(Class<?> innerClass : innerClasses) {
                     // We have 2 levels of hierarchy
                     // Example: /inner execute
 
                     ISubGroup isubgroup = (ISubGroup) innerClass.getAnnotation(ISubGroup.class);
-                    String inner_name = isubgroup.name();
+                    String inner_name = isubgroup.name().toLowerCase();
                     String inner_desc = isubgroup.description();
 
                     LOGGER.info(String.format("Registering CommandGroup (Sub)", inner_name));
@@ -160,7 +166,7 @@ public class Curupira extends ListenerAdapter {
                     mapMethods(methods, commandData, inner_name);
 
                     // All subcommands are added, now we can send to Discord
-                    JDA.upsertCommand(commandData).queue();
+                    if(this.reset) JDA.upsertCommand(commandData).queue();
                 }
             }
             // Not Hidden -> Creating Group Command
@@ -179,7 +185,7 @@ public class Curupira extends ListenerAdapter {
                 mapMethods(methods, commandData, outer_name);
 
                 // Subcommands are added, and about SubCommandGroup????
-                List<Class> innerClasses = Arrays.stream(group.getClasses()).filter(cls -> cls.isAnnotationPresent(ISubGroup.class)).toList();
+                List<Class<?>> innerClasses = Arrays.stream(group.getClasses()).filter(cls -> cls.isAnnotationPresent(ISubGroup.class)).toList();
                 for(Class innerClass : innerClasses) {
                     ISubGroup isubgroup = (ISubGroup) innerClass.getAnnotation(ISubGroup.class);
                     String inner_name = isubgroup.name().toLowerCase();
@@ -198,7 +204,7 @@ public class Curupira extends ListenerAdapter {
                 }
 
                 // All subcommands are added, now we can send to Discord
-                JDA.upsertCommand(commandData).queue();
+                if(this.reset) JDA.upsertCommand(commandData).queue();
             }
         }
     }
@@ -228,11 +234,13 @@ public class Curupira extends ListenerAdapter {
                 commandName = commandData.getName();
 
                 // If the command is not a subcommand, we need to map it to Discord Now
-                JDA.upsertCommand(commandData).queue();
+                if(this.reset) JDA.upsertCommand(commandData).queue();
             }
 
             ICommand icommand = method.getAnnotation(ICommand.class);
-            String key = String.format("%s/%s", outerKey, commandName);
+            String key;
+            if(outerKey.isBlank()) key = commandName;
+            else                   key = String.format("%s/%s", outerKey, commandName);
             addToCommandMapper(method, key, icommand);
         }
     }
@@ -250,28 +258,23 @@ public class Curupira extends ListenerAdapter {
     }
 
     private SerializableData getCommandFromMethod(Method method, boolean isSubcommand) {
-        // TODO Check the method annotations
-
         ICommand ICommand = method.getAnnotation(ICommand.class);
+        // Throw RuntimeException
+        checkParameters(method, ICommand.type());
 
         String groupName;
-        String groupDesc;
 
         IGroup IGroup = method.getDeclaringClass().getAnnotation(IGroup.class);
         ISubGroup ISub = method.getDeclaringClass().getAnnotation(ISubGroup.class);
 
         if (IGroup != null) {
             groupName = IGroup.name().toLowerCase();
-            groupDesc = IGroup.description();
         } else {
             groupName = ISub.name().toLowerCase();
-            groupDesc = ISub.description();
         }
 
         String name = ICommand.name();
         String description = ICommand.description();
-        Environment environment = ICommand.environment();
-        Permission[] permissions = ICommand.permissions();
         Type type = ICommand.type();
 
         List<OptionData> options = Utils.getOptions(method);
@@ -296,6 +299,71 @@ public class Curupira extends ListenerAdapter {
             LOGGER.info(String.format("Registering SubCommand '%s' in the Group '%s'!", name, groupName));
             return subcommandData;
         }
+    }
+
+    public void checkParameters(Method method, Type type) {
+        Class<?>[] parameters = method.getParameterTypes();
+        if(parameters.length != 1)
+            throw new IllegalArgumentException(String.format("Method '%s' must have 1 parameter", method.getName()));
+        if(type == Type.SLASH && !(parameters[0] == SlashCommandInteractionEvent.class))
+            throw new IllegalArgumentException(String.format("Method '%s' must have a parameter of type 'SlashCommandInteractionEvent'", method.getName()));
+        if(type == Type.USER && !(parameters[0] == UserContextInteractionEvent.class))
+            throw new IllegalArgumentException(String.format("Method '%s' must have a parameter of type 'UserContextInteractionEvent'", method.getName()));
+        if(type == Type.MESSAGE && !(parameters[0] == MessageContextInteractionEvent.class))
+            throw new IllegalArgumentException(String.format("Method '%s' must have a parameter of type 'MessageContextInteractionEvent'", method.getName()));
+    }
+
+    public void registerModalsButtonsAndMenus(Class<?> clazz) {
+        Utils.getMethodsAnnotatedBy(clazz, IButton.class, buttonMapper);
+        Utils.getMethodsAnnotatedBy(clazz, IMenu.class  , menuMapper);
+        Utils.getMethodsAnnotatedBy(clazz, IModal.class , modalMapper, (modal, method) -> {
+
+            Modal.Builder builder = Modal.create(modal.id(), modal.title());
+
+            for(IModal.ITextInput textInput : modal.textInputs()) {
+                TextInput.Builder input_builder = TextInput.create(textInput.id(), textInput.label(), textInput.style())
+                        .setPlaceholder(textInput.placeholder())
+                        .setRequired(textInput.required());
+
+                if(textInput.maxLength() > 0) {
+                    input_builder.setMaxLength(textInput.maxLength());
+                }
+
+                if(textInput.minLength() > 0) {
+                    input_builder.setMinLength(textInput.minLength());
+                }
+
+                builder.addActionRow(input_builder.build());
+            }
+            Modal local_modal = builder.build();
+
+            if(modals.containsKey(modal.id())) throw new RuntimeException("Modal with id " + modal.id() + " already exists in modals map");
+            modals.put(modal.id(), local_modal);
+
+            // Wants to add the modal to the command mapper ????
+            if(modal.generate() == Type.UNKNOWN) return;
+
+            CommandDataImpl commandData;
+            if(modal.generate() == Type.SLASH) commandData = new CommandDataImpl(modal.id(), modal.description());
+            else                               commandData = new CommandDataImpl(modal.generate(), modal.id());
+
+            String id = modal.id();
+
+            if(commandMapper.containsKey(id)) throw LOGGER.throwing(new RuntimeException("ICommand with name: " + id + " already exists"));
+
+            Permission[] permissions = modal.permissions();
+            Environment  environment = modal.environment();
+            String       name        = id;
+            String       description = modal.description();
+
+
+            commandMapper.put(id, new CommandHandler(method, permissions, environment,
+                                                     name, description, local_modal));
+
+            if (this.reset) this.JDA.upsertCommand(commandData).queue();
+
+            LOGGER.debug("Added IModal as a Command: " + id);
+        });
     }
 
     @Override
