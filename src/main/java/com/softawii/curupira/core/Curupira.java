@@ -2,12 +2,9 @@ package com.softawii.curupira.core;
 
 import com.softawii.curupira.annotations.*;
 import com.softawii.curupira.properties.Environment;
-import com.softawii.curupira.utils.ParserCallback;
 import com.softawii.curupira.utils.Utils;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
@@ -16,7 +13,6 @@ import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEven
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.Command.Type;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -24,18 +20,15 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.interactions.components.Modal;
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.utils.data.SerializableData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
-import net.dv8tion.jda.internal.interactions.component.TextInputImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Curupira extends ListenerAdapter {
@@ -104,7 +97,7 @@ public class Curupira extends ListenerAdapter {
             // We have 2 levels of hierarchy
             /*
                 1. Outer class (can have commands (methods) or subcommand groups (inner classes))
-                2. Inner class (can have subcommands (methods)
+                2. Inner class (can have subcommands (methods))
              */
             /*
                 Examples:
@@ -122,6 +115,13 @@ public class Curupira extends ListenerAdapter {
                   |
                   outer class
 
+                /inner execute
+                 /\     /\
+                  |     |
+                  |     method (when the outer class is hidden)
+                  |
+                  inner class
+
                 /execute
                  /\
                  |
@@ -138,22 +138,7 @@ public class Curupira extends ListenerAdapter {
                         .filter(method -> method.isAnnotationPresent(ICommand.class)).toList();
 
                 // Creating Individual Commands
-                for(Method method : methods) {
-                    CommandDataImpl commandData = getCommandFromMethod(method);
-                    // It's not a subcommand, we can add to the JDA immediately
-
-                    // TODO: Check Method Parameters
-                    ICommand icommand = method.getAnnotation(ICommand.class);
-                    String key = String.format("%s", commandData.getName());
-                    CommandHandler handler = new CommandHandler(method, icommand.permissions(),
-                            icommand.environment(), commandData.getName(),
-                            icommand.description(), null);
-
-                    if(this.commandMapper.containsKey(key)) throw new RuntimeException(String.format("Duplicate Command: %s", key));
-                    this.commandMapper.put(key, handler);
-
-                    JDA.upsertCommand(commandData).queue();
-                }
+                mapMethods(methods, null, "");
 
                 // If it's Hidden, and we have an Inner Class, that is a group
                 List<Class> innerClasses = List.of(group.getDeclaredClasses()).stream().filter(cls -> cls.isAnnotationPresent(ISubGroup.class)).toList();
@@ -170,22 +155,9 @@ public class Curupira extends ListenerAdapter {
                     CommandDataImpl commandData = new CommandDataImpl(inner_name, inner_desc);
 
                     // Mapping the subgroup
+                    // Example: /inner execute
                     methods = Arrays.stream(innerClass.getDeclaredMethods()).filter(method -> method.isAnnotationPresent(ICommand.class)).toList();
-                    for(Method method : methods) {
-                        SubcommandData subcommandData = getSubcommandFromMethod(method);
-                        commandData.addSubcommands(subcommandData);
-
-                        // TODO: Check Method Parameters
-                        ICommand icommand = method.getAnnotation(ICommand.class);
-                        String key = String.format("%s/%s", inner_name, subcommandData.getName());
-                        CommandHandler handler = new CommandHandler(method, icommand.permissions(),
-                                icommand.environment(), subcommandData.getName(),
-                                icommand.description(), null);
-
-                        if(this.commandMapper.containsKey(key)) throw new RuntimeException(String.format("Duplicate Command: %s", key));
-                        this.commandMapper.put(key, handler);
-
-                    }
+                    mapMethods(methods, commandData, inner_name);
 
                     // All subcommands are added, now we can send to Discord
                     JDA.upsertCommand(commandData).queue();
@@ -204,26 +176,10 @@ public class Curupira extends ListenerAdapter {
 
                 // Creating SubCommands
                 // Example /outer execute
-                for(Method method : methods) {
-                    SubcommandData subcommandData = getSubcommandFromMethod(method);
-                    // Not adding to JDA yet, because it's a group command, and we need to add all subcommands to it
-                    // Adding to JDA later, now we will add to the map
-                    commandData.addSubcommands(subcommandData);
-
-                    // TODO: Check Method Parameters
-                    ICommand icommand = method.getAnnotation(ICommand.class);
-                    String key = String.format("%s/%s", outer_name, subcommandData.getName());
-                    CommandHandler handler = new CommandHandler(method, icommand.permissions(),
-                                                                icommand.environment(), subcommandData.getName(),
-                                                                icommand.description(), null);
-
-                    if(this.commandMapper.containsKey(key)) throw new RuntimeException(String.format("Duplicate Command: %s", key));
-                    this.commandMapper.put(key, handler);
-                }
+                mapMethods(methods, commandData, outer_name);
 
                 // Subcommands are added, and about SubCommandGroup????
                 List<Class> innerClasses = Arrays.stream(group.getClasses()).filter(cls -> cls.isAnnotationPresent(ISubGroup.class)).toList();
-
                 for(Class innerClass : innerClasses) {
                     ISubGroup isubgroup = (ISubGroup) innerClass.getAnnotation(ISubGroup.class);
                     String inner_name = isubgroup.name().toLowerCase();
@@ -236,21 +192,8 @@ public class Curupira extends ListenerAdapter {
                     methods = Arrays.stream(innerClass.getDeclaredMethods()).filter(method -> method.isAnnotationPresent(ICommand.class)).toList();
                     // Creating SubCommands in a SubCommandGroup
                     // Example /outer inner execute
-                    for(Method method : methods) {
-                        SubcommandData subcommandData = getSubcommandFromMethod(method);
-                        subcommandGroupData.addSubcommands(subcommandData);
-
-                        // TODO: Check Method Parameters
-                        ICommand icommand = method.getAnnotation(ICommand.class);
-                        String key = String.format("%s/%s/%s", outer_name, inner_name, subcommandData.getName());
-                        CommandHandler handler = new CommandHandler(method, icommand.permissions(),
-                                icommand.environment(), subcommandData.getName(),
-                                icommand.description(), null);
-
-                        if(this.commandMapper.containsKey(key)) throw new RuntimeException(String.format("Duplicate Command: %s", key));
-                        this.commandMapper.put(key, handler);
-                    }
-
+                    String key = String.format("%s/%s", outer_name, inner_name);
+                    mapMethods(methods, subcommandGroupData, key);
                     commandData.addSubcommandGroups(subcommandGroupData);
                 }
 
@@ -260,8 +203,55 @@ public class Curupira extends ListenerAdapter {
         }
     }
 
+    private void mapMethods(List<Method> methods, SerializableData parentCommand, String outerKey) {
 
-    private CommandDataImpl getCommandFromMethod(Method method) {
+        for(Method method : methods) {
+            // TODO: Check Method Parameters
+            // Generic Verification of Method Parameters
+
+            String commandName;
+            if(parentCommand != null) {
+                // Can Throw an Exception, if the method is a SubCommand and the type is not SLASH
+                SubcommandData subcommandData = (SubcommandData) getCommandFromMethod(method, true);
+                commandName = subcommandData.getName();
+                if (parentCommand instanceof SubcommandGroupData subcommandGroupData) {
+                    subcommandGroupData.addSubcommands(subcommandData);
+                } else if (parentCommand instanceof CommandDataImpl commandData) {
+                    commandData.addSubcommands(subcommandData);
+                } else {
+                    throw new IllegalArgumentException("SerializableData is not a SubcommandGroupData or CommandDataImpl");
+                }
+            }
+            // It's an individual command
+            else {
+                CommandDataImpl commandData = (CommandDataImpl) getCommandFromMethod(method, false);
+                commandName = commandData.getName();
+
+                // If the command is not a subcommand, we need to map it to Discord Now
+                JDA.upsertCommand(commandData).queue();
+            }
+
+            ICommand icommand = method.getAnnotation(ICommand.class);
+            String key = String.format("%s/%s", outerKey, commandName);
+            addToCommandMapper(method, key, icommand);
+        }
+    }
+
+    private void addToCommandMapper(Method method, String key, ICommand icommand) {
+
+        String commandName = icommand.name().isBlank() ? method.getName().toLowerCase() : icommand.name().toLowerCase();
+
+        CommandHandler handler = new CommandHandler(method, icommand.permissions(),
+                icommand.environment(), commandName,
+                icommand.description(), null);
+
+        if(this.commandMapper.containsKey(key)) throw new RuntimeException(String.format("Duplicate Command: %s", key));
+        this.commandMapper.put(key, handler);
+    }
+
+    private SerializableData getCommandFromMethod(Method method, boolean isSubcommand) {
+        // TODO Check the method annotations
+
         ICommand ICommand = method.getAnnotation(ICommand.class);
 
         String groupName;
@@ -270,7 +260,7 @@ public class Curupira extends ListenerAdapter {
         IGroup IGroup = method.getDeclaringClass().getAnnotation(IGroup.class);
         ISubGroup ISub = method.getDeclaringClass().getAnnotation(ISubGroup.class);
 
-        if(IGroup != null) {
+        if (IGroup != null) {
             groupName = IGroup.name().toLowerCase();
             groupDesc = IGroup.description();
         } else {
@@ -286,48 +276,26 @@ public class Curupira extends ListenerAdapter {
 
         List<OptionData> options = Utils.getOptions(method);
 
-        CommandDataImpl commandData;
-
-
-        if(type == Type.SLASH) {
-            commandData = new CommandDataImpl(name.toLowerCase(), description);
-            commandData.addOptions(options);
+        if (!isSubcommand) {
+            CommandDataImpl commandData;
+            if (type == Type.SLASH) {
+                commandData = new CommandDataImpl(name.toLowerCase(), description);
+                commandData.addOptions(options);
+            } else {
+                commandData = new CommandDataImpl(type, name);
+            }
+            LOGGER.info(String.format("Registering Command '%s' in the Group '%s'!", name, groupName));
+            return commandData;
         } else {
-            commandData = new CommandDataImpl(type, name);
+            if (type != Type.SLASH)
+                throw new RuntimeException(String.format("Subcommand '%s' is not a Slash command!", name));
+
+            SubcommandData subcommandData = new SubcommandData(name, description);
+            subcommandData.addOptions(options);
+
+            LOGGER.info(String.format("Registering SubCommand '%s' in the Group '%s'!", name, groupName));
+            return subcommandData;
         }
-
-        LOGGER.info(String.format("Registering Command '%s' in the Group '%s'!", name, groupName));
-        return commandData;
-    }
-
-    private SubcommandData getSubcommandFromMethod(Method method) {
-        ICommand ICommand = method.getAnnotation(ICommand.class);
-
-        String groupName;
-        String groupDesc;
-
-        IGroup IGroup = method.getDeclaringClass().getAnnotation(IGroup.class);
-        ISubGroup ISub = method.getDeclaringClass().getAnnotation(ISubGroup.class);
-
-        if(IGroup != null) {
-            groupName = IGroup.name().toLowerCase();
-        } else {
-            groupName = ISub.name().toLowerCase();
-        }
-
-        String name = ICommand.name().toLowerCase();
-        String description = ICommand.description();
-        Type type = ICommand.type();
-
-        List<OptionData> options = Utils.getOptions(method);
-
-        if(type != Type.SLASH) throw new RuntimeException(String.format("Subcommand '%s' is not a Slash command!", name));
-
-        SubcommandData subcommandData = new SubcommandData(name, description);
-        subcommandData.addOptions(options);
-
-        LOGGER.info(String.format("Registering SubCommand '%s' in the Group '%s'!", name, groupName));
-        return subcommandData;
     }
 
     @Override
