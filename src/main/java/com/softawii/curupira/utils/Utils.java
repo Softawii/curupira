@@ -172,4 +172,47 @@ public class Utils {
 
         return options;
     }
+
+
+    public static List<OptionData> getOptions(Method method) {
+        // Checking Arguments
+        List<OptionData> options = new ArrayList<>();
+
+        // 4 Possible Arguments
+        // 1. IArgument
+        // 2. IArguments
+        // 3. IRange
+        // 4. IRanges
+
+        // 1. IArgument
+        if(method.isAnnotationPresent(IArgument.class)) {
+            IArgument IArgument = method.getAnnotation(IArgument.class);
+            options.add(Utils.parserArgument(IArgument, null, null));
+
+            // 2. IArguments
+        } else if(method.isAnnotationPresent(IArguments.class)) {
+            IArguments IArguments = method.getAnnotation(IArguments.class);
+
+            for(IArgument IArgument : IArguments.value()) {
+                options.add(Utils.parserArgument(IArgument, null, null));
+            }
+        }
+
+        // 3. IRange
+        if(method.isAnnotationPresent(IRange.class)) {
+            IRange IRange = method.getAnnotation(IRange.class);
+            options.addAll(Utils.parserRange(IRange, null, null));
+
+            // 4. IRanges
+        } else if(method.isAnnotationPresent(IRanges.class)) {
+            IRanges IRanges = method.getAnnotation(IRanges.class);
+
+            for(IRange IRange : IRanges.value()) {
+                options.addAll(Utils.parserRange(IRange, null, null));
+            }
+        }
+
+        return options;
+    }
+
 }
