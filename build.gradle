@@ -1,6 +1,7 @@
 plugins {
     id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'java-library'
+    id 'maven-publish'
 }
 
 group 'com.softawii'
@@ -21,6 +22,25 @@ dependencies {
     api 'org.apache.logging.log4j:log4j-core:2.17.2'
     implementation 'org.reflections:reflections:0.10.2'
 }
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Softawii/curupira")
+            credentials {
+                username = System.getenv("PUB_USERNAME")
+                password = System.getenv("PUB_TOKEN")
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+        }
+    }
+}
+
 
 test {
     useJUnitPlatform()
