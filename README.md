@@ -19,7 +19,8 @@ repositories {
     }
 }
     
-dependencies {   
+dependencies { 
+  implementation("com.softawii:curupira:0.2.0")
   implementation("com.softawii:curupira:0.2.0:all")
 }
 ```
