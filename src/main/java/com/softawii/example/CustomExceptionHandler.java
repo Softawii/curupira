@@ -14,7 +14,7 @@ public class CustomExceptionHandler implements ExceptionHandler {
     public void handle(Throwable throwable, Interaction interaction) {
         JDA jda = interaction.getJDA();
         User user = interaction.getUser();
-        TextChannel textChannel = interaction.getTextChannel();
+        TextChannel textChannel = (TextChannel) interaction.getChannel();
 
         if (throwable instanceof InvocationTargetException e) {
             if (interaction instanceof IReplyCallback i) {
