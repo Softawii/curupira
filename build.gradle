@@ -4,8 +4,8 @@ plugins {
     id 'maven-publish'
 }
 
-group 'com.softawii'
-version '0.2.1'
+group 'com.github.Softawii'
+version '0.2.2'
 
 repositories {
     mavenCentral()
@@ -24,18 +24,8 @@ dependencies {
 }
 
 publishing {
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Softawii/curupira")
-            credentials {
-                username = System.getenv("PUB_USERNAME")
-                password = System.getenv("PUB_TOKEN")
-            }
-        }
-    }
     publications {
-        gpr(MavenPublication) {
+        release(MavenPublication) {
             from(components.java)
         }
     }
