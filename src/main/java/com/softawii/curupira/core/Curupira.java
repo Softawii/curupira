@@ -156,6 +156,9 @@ public class Curupira extends ListenerAdapter {
                     // Example: /inner execute
 
                     ISubGroup isubgroup = (ISubGroup) innerClass.getAnnotation(ISubGroup.class);
+
+                    registerModalsButtonsAndMenus(innerClass);
+
                     String inner_name = isubgroup.name().toLowerCase();
                     String inner_desc = isubgroup.description();
 
