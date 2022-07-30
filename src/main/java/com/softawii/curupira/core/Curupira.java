@@ -328,6 +328,9 @@ public class Curupira extends ListenerAdapter {
         Utils.getMethodsAnnotatedBy(clazz, IMenu.class  , menuMapper);
         Utils.getMethodsAnnotatedBy(clazz, IModal.class , modalMapper, (modal, method) -> {
 
+            // Wants to create a command???
+            if(modal.generate() == Type.UNKNOWN) return;
+
             Modal.Builder builder = Modal.create(modal.id(), modal.title());
 
             for(IModal.ITextInput textInput : modal.textInputs()) {
@@ -349,9 +352,6 @@ public class Curupira extends ListenerAdapter {
 
             if(modals.containsKey(modal.id())) throw new RuntimeException("Modal with id " + modal.id() + " already exists in modals map");
             modals.put(modal.id(), local_modal);
-
-            // Wants to add the modal to the command mapper ????
-            if(modal.generate() == Type.UNKNOWN) return;
 
             CommandDataImpl commandData;
             if(modal.generate() == Type.SLASH) commandData = new CommandDataImpl(modal.id(), modal.description());

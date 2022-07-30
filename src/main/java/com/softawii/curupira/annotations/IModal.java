@@ -45,7 +45,7 @@ public @interface IModal {
 
     String id();
     String description() default "";
-    String title();
+    String title() default "";
     Environment environment() default Environment.SERVER;
     Permission[] permissions() default {};
     ITextInput[] textInputs() default {};
