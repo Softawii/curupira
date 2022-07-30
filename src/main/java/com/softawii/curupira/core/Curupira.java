@@ -186,6 +186,7 @@ public class Curupira extends ListenerAdapter {
                 List<Method> methods = Arrays.stream(group.getDeclaredMethods())
                         .filter(method -> method.isAnnotationPresent(ICommand.class)).toList();
 
+
                 // Creating SubCommands
                 // Example /outer execute
                 mapMethods(methods, commandData, outer_name);
@@ -194,6 +195,9 @@ public class Curupira extends ListenerAdapter {
                 List<Class<?>> innerClasses = Arrays.stream(group.getClasses()).filter(cls -> cls.isAnnotationPresent(ISubGroup.class)).toList();
                 for(Class innerClass : innerClasses) {
                     ISubGroup isubgroup = (ISubGroup) innerClass.getAnnotation(ISubGroup.class);
+
+                    registerModalsButtonsAndMenus(innerClass);
+
                     String inner_name = isubgroup.name().toLowerCase();
                     String inner_desc = isubgroup.description();
 
