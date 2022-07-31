@@ -1,6 +1,5 @@
 package com.softawii.curupira.core;
 
-import com.softawii.curupira.annotations.IGroup;
 import com.softawii.curupira.exceptions.InvalidChannelTypeException;
 import com.softawii.curupira.exceptions.MissingPermissionsException;
 import com.softawii.curupira.properties.Environment;
@@ -32,7 +31,8 @@ class CommandHandler {
             ChannelType.GUILD_NEWS_THREAD,
             ChannelType.NEWS,
             ChannelType.GUILD_PRIVATE_THREAD,
-            ChannelType.TEXT
+            ChannelType.TEXT,
+            ChannelType.VOICE
     };
 
     private static final ChannelType[] PRIVATE_CHANNELS = {
