@@ -12,7 +12,6 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.Modal;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -100,46 +99,30 @@ class CommandHandler {
      * Executes the command or just print the stacktrace. (This is used for debugging, but it's temporary)
      * @param event
      */
-    public void execute(SlashCommandInteractionEvent event) {
-        try {
-            if (canExecute(event.getChannelType(), event.getMember())) {
-                if(modal == null) method.invoke(null, event);
-                else event.replyModal(modal).queue();
-            }
-        } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
-            e.printStackTrace();
+    public void execute(SlashCommandInteractionEvent event) throws Throwable {
+        if (canExecute(event.getChannelType(), event.getMember())) {
+            if (modal == null) method.invoke(null, event);
+            else event.replyModal(modal).queue();
         }
     }
 
-    public void execute(UserContextInteractionEvent event) {
-        try {
-            if (canExecute(event.getChannelType(), event.getMember())) {
-                if(modal == null) method.invoke(null, event);
-                else event.replyModal(modal).queue();
-            }
-        } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
-            e.printStackTrace();
+    public void execute(UserContextInteractionEvent event) throws Throwable {
+        if (canExecute(event.getChannelType(), event.getMember())) {
+            if (modal == null) method.invoke(null, event);
+            else event.replyModal(modal).queue();
         }
     }
 
-    public void execute(MessageContextInteractionEvent event) {
-        try {
-            if (canExecute(event.getChannelType(), event.getMember())) {
-                if(modal == null) method.invoke(null, event);
-                else event.replyModal(modal).queue();
-            }
-        } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
-            e.printStackTrace();
+    public void execute(MessageContextInteractionEvent event) throws Throwable {
+        if (canExecute(event.getChannelType(), event.getMember())) {
+            if (modal == null) method.invoke(null, event);
+            else event.replyModal(modal).queue();
         }
     }
 
-    public void execute(ModalInteractionEvent event) {
-        try {
-            if (canExecute(event.getChannelType(), event.getMember())) {
-                method.invoke(null, event);
-            }
-        } catch (InvalidChannelTypeException | InvocationTargetException | IllegalAccessException | MissingPermissionsException e) {
-            e.printStackTrace();
+    public void execute(ModalInteractionEvent event) throws Throwable {
+        if (canExecute(event.getChannelType(), event.getMember())) {
+            method.invoke(null, event);
         }
     }
 
