@@ -382,10 +382,10 @@ public class Curupira extends ListenerAdapter {
                 this.commandMapper.get(event.getCommandPath()).execute(event);
             }
         } catch (Throwable e) {
+            LOGGER.warn(e.getMessage(), e);
             if (exceptionHandler != null) {
                 exceptionHandler.handle(e, event);
             }
-            LOGGER.warn(e.getMessage(), e);
         }
     }
     @Override
@@ -399,10 +399,10 @@ public class Curupira extends ListenerAdapter {
             try {
                 this.buttonMapper.get(id).invoke(null, event);
             } catch (Throwable e) {
+                LOGGER.warn(e.getMessage(), e);
                 if (exceptionHandler != null) {
                     exceptionHandler.handle(e, event);
                 }
-                LOGGER.warn(e.getMessage(), e);
             }
         }
     }
@@ -418,11 +418,10 @@ public class Curupira extends ListenerAdapter {
             try {
                 menuMapper.get(key).invoke(null, event);
             } catch (Throwable e) {
+                LOGGER.warn(e.getMessage(), e);
                 if (exceptionHandler != null) {
                     exceptionHandler.handle(e, event);
                 }
-                LOGGER.warn(e.getMessage(), e);
-                e.printStackTrace();
             }
         }
     }
@@ -439,11 +438,10 @@ public class Curupira extends ListenerAdapter {
                 LOGGER.debug("Invoking IModal: " + key);
                 modalMapper.get(key).invoke(null, event);
             } catch (Throwable e) {
+                LOGGER.warn(e.getMessage(), e);
                 if (exceptionHandler != null) {
                     exceptionHandler.handle(e, event);
                 }
-                LOGGER.warn(e.getMessage(), e);
-                e.printStackTrace();
             }
         }
     }
@@ -457,11 +455,10 @@ public class Curupira extends ListenerAdapter {
                 this.commandMapper.get(event.getName()).execute(event);
             }
         } catch (Throwable e) {
+            LOGGER.warn(e.getMessage(), e);
             if (exceptionHandler != null) {
                 exceptionHandler.handle(e, event);
             }
-            LOGGER.warn(e.getMessage(), e);
-            e.printStackTrace();
         }
     }
 
@@ -475,11 +472,10 @@ public class Curupira extends ListenerAdapter {
                 this.commandMapper.get(name).execute(event);
             }
         } catch (Throwable e) {
+            LOGGER.warn(e.getMessage(), e);
             if (exceptionHandler != null) {
                 exceptionHandler.handle(e, event);
             }
-            LOGGER.warn(e.getMessage(), e);
-            e.printStackTrace();
         }
     }
 
