@@ -2,8 +2,8 @@ package com.softawii.example;
 
 import com.softawii.curupira.core.ExceptionHandler;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 
