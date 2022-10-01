@@ -326,6 +326,9 @@ public class Curupira extends ListenerAdapter {
         Utils.getMethodsAnnotatedBy(clazz, IMenu.class  , menuMapper);
         Utils.getMethodsAnnotatedBy(clazz, IModal.class , modalMapper, (modal, method) -> {
 
+            // No Title ? Dont need to do nothing
+            if(modal.title().isEmpty()) return;
+
             Modal.Builder builder = Modal.create(modal.id(), modal.title());
 
             for(IModal.ITextInput textInput : modal.textInputs()) {
@@ -363,7 +366,6 @@ public class Curupira extends ListenerAdapter {
             Environment  environment = modal.environment();
             String       name        = id;
             String       description = modal.description();
-
 
             commandMapper.put(id, new CommandHandler(method, permissions, environment,
                                                      name, description, local_modal));
