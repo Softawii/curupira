@@ -11,15 +11,15 @@ import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionE
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericSelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.Command.Type;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
-import net.dv8tion.jda.api.interactions.components.Modal;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.data.SerializableData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
 import org.apache.logging.log4j.LogManager;
@@ -45,7 +45,7 @@ public class Curupira extends ListenerAdapter {
     private final boolean reset;
     private final ExceptionHandler exceptionHandler;
 
-    public Curupira(@NotNull JDA JDA, boolean reset, ExceptionHandler exceptionHandler, String @NotNull ... packages) {
+    public Curupira(@NotNull JDA JDA, boolean reset, ExceptionHandler exceptionHandler, String... packages) {
         LOGGER.info("Inicializing Curupira");
         // Init
         commandMapper       = new HashMap<>();
@@ -410,7 +410,7 @@ public class Curupira extends ListenerAdapter {
     }
 
     @Override
-    public void onSelectMenuInteraction(@NotNull SelectMenuInteractionEvent event) {
+    public void onGenericSelectMenuInteraction(@NotNull GenericSelectMenuInteractionEvent event) {
         LOGGER.debug("Received Select IMenu: " + event.getComponentId());
 
         // KEY: MODAL_ID:ANYTHING....
