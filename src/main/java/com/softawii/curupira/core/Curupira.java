@@ -11,15 +11,15 @@ import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionE
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.Command.Type;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
-import net.dv8tion.jda.api.interactions.components.Modal;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.data.SerializableData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
 import org.apache.logging.log4j.LogManager;
@@ -45,7 +45,7 @@ public class Curupira extends ListenerAdapter {
     private final boolean reset;
     private final ExceptionHandler exceptionHandler;
 
-    public Curupira(@NotNull JDA JDA, boolean reset, ExceptionHandler exceptionHandler, String @NotNull ... packages) {
+    public Curupira(@NotNull JDA JDA, boolean reset, ExceptionHandler exceptionHandler, String ... packages) {
         LOGGER.info("Inicializing Curupira");
         // Init
         commandMapper       = new HashMap<>();
@@ -151,7 +151,7 @@ public class Curupira extends ListenerAdapter {
                 List<Class<?>> innerClasses = Stream.of(group.getDeclaredClasses()).filter(cls -> cls.isAnnotationPresent(ISubGroup.class)).toList();
                 for(Class<?> innerClass : innerClasses) {
                     // We have 2 levels of hierarchy
-                    // Example: /inner execute
+                    // Example: 'inner execute'
 
                     ISubGroup isubgroup = (ISubGroup) innerClass.getAnnotation(ISubGroup.class);
 
@@ -165,7 +165,7 @@ public class Curupira extends ListenerAdapter {
                     CommandDataImpl commandData = new CommandDataImpl(inner_name, inner_desc);
 
                     // Mapping the subgroup
-                    // Example: /inner execute
+                    // Example: 'inner execute'
                     methods = Arrays.stream(innerClass.getDeclaredMethods()).filter(method -> method.isAnnotationPresent(ICommand.class)).toList();
                     mapMethods(methods, commandData, inner_name);
 
@@ -186,7 +186,7 @@ public class Curupira extends ListenerAdapter {
 
 
                 // Creating SubCommands
-                // Example /outer execute
+                // Example 'outer execute'
                 mapMethods(methods, commandData, outer_name);
 
                 // Subcommands are added, and about SubCommandGroup????
@@ -206,7 +206,7 @@ public class Curupira extends ListenerAdapter {
                     methods = Arrays.stream(innerClass.getDeclaredMethods()).filter(method -> method.isAnnotationPresent(ICommand.class)).toList();
                     // Creating SubCommands in a SubCommandGroup
                     // Example /outer inner execute
-                    String key = String.format("%s/%s", outer_name, inner_name);
+                    String key = String.format("%s %s", outer_name, inner_name);
                     mapMethods(methods, subcommandGroupData, key);
                     commandData.addSubcommandGroups(subcommandGroupData);
                 }
@@ -248,7 +248,7 @@ public class Curupira extends ListenerAdapter {
             ICommand icommand = method.getAnnotation(ICommand.class);
             String key;
             if(outerKey.isBlank()) key = commandName;
-            else                   key = String.format("%s/%s", outerKey, commandName);
+            else                   key = String.format("%s %s", outerKey, commandName);
             addToCommandMapper(method, key, icommand);
         }
     }
@@ -378,10 +378,10 @@ public class Curupira extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-        LOGGER.debug("Received Slash ICommand: " + event.getCommandPath());
+        LOGGER.debug("Received Slash ICommand: " + event.getFullCommandName());
         try {
-            if (commandMapper.containsKey(event.getCommandPath())) {
-                this.commandMapper.get(event.getCommandPath()).execute(event);
+            if (commandMapper.containsKey(event.getFullCommandName())) {
+                this.commandMapper.get(event.getFullCommandName()).execute(event);
             }
         } catch (Throwable e) {
             LOGGER.warn(e.getMessage(), e);
@@ -410,7 +410,7 @@ public class Curupira extends ListenerAdapter {
     }
 
     @Override
-    public void onSelectMenuInteraction(@NotNull SelectMenuInteractionEvent event) {
+    public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
         LOGGER.debug("Received Select IMenu: " + event.getComponentId());
 
         // KEY: MODAL_ID:ANYTHING....

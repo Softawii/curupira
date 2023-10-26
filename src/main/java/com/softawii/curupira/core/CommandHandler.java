@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
-import net.dv8tion.jda.api.interactions.components.Modal;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
