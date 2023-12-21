@@ -10,7 +10,7 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
 
-        String token = "OTM5OTcyODU1MDg3NjUyOTM0.GFYXVw.Zxjk9If6kI6sV5f4UdbsOsQUKD8d2kXoScrT4Q";
+        String token = System.getenv("discord_token");
         String pkg   = "com.softawii.example";
 
         // Default Builder

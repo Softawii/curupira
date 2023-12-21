@@ -4,10 +4,10 @@ import com.softawii.curupira.annotations.*;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -15,7 +15,7 @@ import java.util.*;
 
 public class Utils {
 
-    private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
     /**
      * This function is used to extract the choices from the annotation.
@@ -70,7 +70,8 @@ public class Utils {
             String id = ((IModal) annotation).id();
             return id.isBlank() ? defaultID : id;
         } else {
-            throw LOGGER.throwing(new RuntimeException("Annotation not supported"));
+            LOGGER.error("Annotation not supported");
+            throw new RuntimeException("Annotation not supported");
         }
     }
 
@@ -100,7 +101,8 @@ public class Utils {
                 T annotation = method.getAnnotation(annotationClass);
                 String id = getID(annotation, method.getName());
                 if(mapper.containsKey(id)) {
-                    throw LOGGER.throwing(new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists"));
+                    LOGGER.error(annotationClass.getSimpleName() + " with id " + id + " already exists");
+                    throw new RuntimeException(annotationClass.getSimpleName() + " with id " + id + " already exists");
                 }
 
                 mapper.put(id, method);
@@ -155,7 +157,10 @@ public class Utils {
         boolean hasAutoComplete = IArgument.hasAutoComplete();
         List<Command.Choice> choices = Utils.getChoices(IArgument.choices(), type);
 
-        if(step <= 0) throw LOGGER.throwing(new RuntimeException("Steps must be greater than 0"));
+        if(step <= 0) {
+            LOGGER.error("Steps must be greater than 0");
+            throw new RuntimeException("Steps must be greater than 0");
+        }
 
         for(int value = min; value <= max; value += step) {
             String name = IArgument.name() + value;
