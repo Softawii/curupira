@@ -22,9 +22,9 @@ import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.data.SerializableData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 
 public class Curupira extends ListenerAdapter {
 
-    private static final Logger LOGGER = LogManager.getLogger(Curupira.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Curupira.class);
 
     private final JDA JDA;
     private final Map<String, CommandHandler> commandMapper;
@@ -360,7 +360,10 @@ public class Curupira extends ListenerAdapter {
 
             String id = modal.id();
 
-            if(commandMapper.containsKey(id)) throw LOGGER.throwing(new RuntimeException("ICommand with name: " + id + " already exists"));
+            if(commandMapper.containsKey(id)) {
+                LOGGER.error("ICommand with name: " + id + " already exists");
+                throw new RuntimeException("ICommand with name: " + id + " already exists");
+            }
 
             Permission[] permissions = modal.permissions();
             Environment  environment = modal.environment();

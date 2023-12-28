@@ -216,3 +216,23 @@ public static void modalTitle(ModalInteractionEvent event) {
 ```
 
 Now you can create your own bot with Curupira!
+
+
+### Logging Framework - SLF4J
+
+Curupira utilizes [SLF4J](https://www.slf4j.org/) as its logging framework.
+
+To ensure proper logging functionality, it is essential to include an SLF4J implementation in your build path alongside Curupira.
+Failure to do so may result in the following messages being displayed on the console during startup:
+
+```
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+```
+
+```
+SLF4J: No SLF4J providers were found.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See https://www.slf4j.org/codes.html#noProviders for further details.
+```
