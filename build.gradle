@@ -30,6 +30,13 @@ publishing {
     }
 }
 
+shadowJar {
+    jar {
+        exclude('com/softawii/example/**')
+    }
+    exclude('com/softawii/example/**')
+}
+
 
 test {
     useJUnitPlatform()
