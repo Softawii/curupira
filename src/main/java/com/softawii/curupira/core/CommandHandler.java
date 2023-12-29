@@ -133,4 +133,8 @@ class CommandHandler {
     public String getDescription() {
         return description;
     }
+
+    boolean isModal() {
+        return modal != null;
+    }
 }

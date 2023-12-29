@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Curupira extends ListenerAdapter {
+public final class Curupira extends ListenerAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Curupira.class);
 
@@ -71,15 +71,6 @@ public class Curupira extends ListenerAdapter {
         this.exceptionHandler = exceptionHandler;
         LOGGER.info("Curupira initialized in bot " + JDA.getSelfUser().getName());
         LOGGER.info("Commands: " + String.join(", ", commandMapper.keySet()));
-
-    }
-
-    /**
-     * @param id The id of the command
-     * @return Modal that was generated in the start of the class.
-     */
-    public Modal.Builder getModal(String id) {
-        return modals.get(id).createCopy();
     }
 
     /**
@@ -309,7 +300,7 @@ public class Curupira extends ListenerAdapter {
         }
     }
 
-    public void checkParameters(Method method, Type type) {
+    private void checkParameters(Method method, Type type) {
         Class<?>[] parameters = method.getParameterTypes();
         if(parameters.length != 1)
             throw new IllegalArgumentException(String.format("Method '%s' must have 1 parameter", method.getName()));
@@ -321,7 +312,7 @@ public class Curupira extends ListenerAdapter {
             throw new IllegalArgumentException(String.format("Method '%s' must have a parameter of type 'MessageContextInteractionEvent'", method.getName()));
     }
 
-    public void registerModalsButtonsAndMenus(Class<?> clazz) {
+    private void registerModalsButtonsAndMenus(Class<?> clazz) {
         Utils.getMethodsAnnotatedBy(clazz, IButton.class, buttonMapper);
         Utils.getMethodsAnnotatedBy(clazz, IMenu.class  , menuMapper);
         Utils.getMethodsAnnotatedBy(clazz, IModal.class , modalMapper, (modal, method) -> {
@@ -393,6 +384,7 @@ public class Curupira extends ListenerAdapter {
             }
         }
     }
+
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         LOGGER.debug("Received IButton: " + event.getComponentId());
@@ -497,5 +489,13 @@ public class Curupira extends ListenerAdapter {
                     .collect(Collectors.toList());
             event.replyChoices(choices).queue();
         }
+    }
+
+    Map<String, CommandHandler> getCommands() {
+        return Collections.unmodifiableMap(commandMapper);
+    }
+
+    Map<String, Modal> getModals() {
+        return Collections.unmodifiableMap(modals);
     }
 }
