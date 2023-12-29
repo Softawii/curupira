@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
+import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,11 @@ public class Utils {
      */
     public static Set<Class> getClassesInPackage(String pkgName) {
         LOGGER.debug("Searching for classes in package '" + pkgName + "'");
-        Reflections reflections = new Reflections(pkgName, Scanners.SubTypes.filterResultsBy(s -> true));
+        Reflections reflections = new Reflections(
+                new ConfigurationBuilder()
+                        .forPackages(pkgName)
+                        .addScanners(Scanners.SubTypes.filterResultsBy(s -> true))
+        );
         return new HashSet<>(reflections.getSubTypesOf(Object.class));
     }
 
