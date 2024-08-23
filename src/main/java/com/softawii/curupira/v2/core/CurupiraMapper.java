@@ -6,7 +6,6 @@ import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
@@ -18,7 +17,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 class CurupiraMapper {
 
@@ -47,8 +45,10 @@ class CurupiraMapper {
 
     private void apply() {
         if(registerCommandsToDiscord) {
-            for(Map.Entry<String, CommandDataImpl> entry : data.entrySet())
+            for(Map.Entry<String, CommandDataImpl> entry : data.entrySet()) {
+                this.logger.info("Apply command: {}", entry.getValue());
                 jda.upsertCommand(entry.getValue()).queue();
+            }
         }
     }
 
@@ -116,6 +116,7 @@ class CurupiraMapper {
         else if (name.length == 3) {
             this.data.get(name[0]).getSubcommandGroups().stream().filter(group -> group.getName().equals(name[1])).findFirst().ifPresentOrElse(group -> {
                 SubcommandData subcommandData = new SubcommandData(name[2], commandInfo.description());
+                subcommandData.addOptions(handler.getOptions());
                 group.addSubcommands(subcommandData);
             }, () -> {
                 SubcommandGroupData groupData = new SubcommandGroupData(name[1], controllerInfo.description());
@@ -132,7 +133,7 @@ class CurupiraMapper {
         if(commands.containsKey(event.getFullCommandName())) {
             CommandHandler handler = commands.get(event.getFullCommandName());
             try {
-                handler.handle(event);
+                handler.execute(event);
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }

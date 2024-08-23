@@ -8,8 +8,10 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.utils.messages.MessagePollBuilder;
+import net.dv8tion.jda.api.utils.messages.MessagePollData;
 
-@DiscordController(value = "bar", description = "foo foo foo", parent = "foo")
+@DiscordController(value = "bar", description = "foo foo foo", parent = "fuo")
 public class Foo {
 
     @DiscordCommand(name = "baz", description = "baz baz baz")
@@ -23,10 +25,18 @@ public class Foo {
     }
 
     @DiscordCommand(name = "qux", description = "qux qux qux")
-    public void qux(SlashCommandInteractionEvent event,
+    public String qux(SlashCommandInteractionEvent event,
                     @RequestInfo Member member,
                     @DiscordParameter(name = "hello", description = "channel to send hello") MessageChannelUnion channel) {
         channel.sendMessage("hello chat").queue();
-        event.reply("sent").setEphemeral(true).queue();
+        return "Hello " + member.getEffectiveName();
+    }
+
+    @DiscordCommand(name = "charlie", description = "charlie charlie charlie")
+    public MessagePollData charlie(
+                    @RequestInfo Member member,
+                    @DiscordParameter(name = "poll", description = "pool name") String name) {
+
+        return MessagePollData.builder(name).addAnswer("yes").addAnswer("no").build();
     }
 }

@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import java.lang.reflect.Parameter;
 
 public class DiscordToJavaParser {
+
     public static Object getParameterFromEvent(CommandInteractionPayload event, Parameter parameter) {
         if(parameter.getType().equals(SlashCommandInteractionEvent.class)) {
             return event;

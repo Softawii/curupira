@@ -3,16 +3,12 @@ package com.softawii.curupira.v2.core;
 import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.DiscordParameter;
-import com.softawii.curupira.v2.parser.DiscordToJavaParser;
 import com.softawii.curupira.v2.parser.JavaToDiscordParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
-import net.dv8tion.jda.internal.interactions.CommandDataImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +17,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static com.softawii.curupira.v2.parser.DiscordToJavaParser.getParameterFromEvent;
 
@@ -105,7 +100,11 @@ class CommandHandler {
         return parameters.toArray();
     }
 
-    public void handle(GenericCommandInteractionEvent event) throws InvocationTargetException, IllegalAccessException {
-        method.invoke(instance, getParameters(event));
+    public void execute(GenericCommandInteractionEvent event) throws InvocationTargetException, IllegalAccessException {
+        Object result = method.invoke(instance, getParameters(event));
+        // something to reply
+        if(result != null) {
+            JavaToDiscordParser.responseFromCommandEvent(event, result);
+        }
     }
 }

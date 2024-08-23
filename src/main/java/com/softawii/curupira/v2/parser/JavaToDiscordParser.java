@@ -1,11 +1,20 @@
 package com.softawii.curupira.v2.parser;
 
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessagePollData;
+
+import java.util.Collection;
+import java.util.List;
 
 public class JavaToDiscordParser {
 
@@ -32,5 +41,28 @@ public class JavaToDiscordParser {
             return OptionType.CHANNEL;
         } else
             throw new RuntimeException("Type not supported");
+    }
+
+    public static void responseFromCommandEvent(GenericCommandInteractionEvent event, Object result) {
+        if(result instanceof String response) {
+            event.reply(response).queue();
+        } else if(result instanceof MessageCreateData message) {
+            event.reply(message).queue();
+        } else if(result instanceof Modal modal) {
+            event.replyModal(modal).queue();
+        } else if(result instanceof MessageEmbed embed) {
+            event.replyEmbeds(embed).queue();
+        } else if(result instanceof Collection<?> collection && collection.stream().findFirst().get() instanceof MessageEmbed) {
+            Collection<MessageEmbed> collectionEmbed = (Collection<MessageEmbed>) collection;
+            event.replyEmbeds(collectionEmbed).queue();
+        }
+        else if(result instanceof Collection<?> collection && collection.stream().findFirst().get() instanceof FileUpload) {
+             Collection<FileUpload> collectionFiles = (Collection<FileUpload>) collection;
+             event.replyFiles(collectionFiles).queue();
+        } else if(result instanceof MessagePollData poll) {
+            event.replyPoll(poll).queue();
+        } else {
+            throw new RuntimeException("Type not supported");
+        }
     }
 }
