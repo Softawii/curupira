@@ -43,24 +43,24 @@ public class JavaToDiscordParser {
             throw new RuntimeException("Type not supported");
     }
 
-    public static void responseFromCommandEvent(GenericCommandInteractionEvent event, Object result) {
+    public static void responseFromCommandEvent(GenericCommandInteractionEvent event, Object result, boolean ephemeral) {
         if(result instanceof String response) {
-            event.reply(response).queue();
+            event.reply(response).setEphemeral(ephemeral).queue();
         } else if(result instanceof MessageCreateData message) {
-            event.reply(message).queue();
+            event.reply(message).setEphemeral(ephemeral).queue();
         } else if(result instanceof Modal modal) {
             event.replyModal(modal).queue();
         } else if(result instanceof MessageEmbed embed) {
-            event.replyEmbeds(embed).queue();
+            event.replyEmbeds(embed).setEphemeral(ephemeral).queue();
         } else if(result instanceof Collection<?> collection && collection.stream().findFirst().get() instanceof MessageEmbed) {
             Collection<MessageEmbed> collectionEmbed = (Collection<MessageEmbed>) collection;
-            event.replyEmbeds(collectionEmbed).queue();
+            event.replyEmbeds(collectionEmbed).setEphemeral(ephemeral).queue();
         }
         else if(result instanceof Collection<?> collection && collection.stream().findFirst().get() instanceof FileUpload) {
              Collection<FileUpload> collectionFiles = (Collection<FileUpload>) collection;
-             event.replyFiles(collectionFiles).queue();
+             event.replyFiles(collectionFiles).setEphemeral(ephemeral).queue();
         } else if(result instanceof MessagePollData poll) {
-            event.replyPoll(poll).queue();
+            event.replyPoll(poll).setEphemeral(true).queue();
         } else {
             throw new RuntimeException("Type not supported");
         }

@@ -22,10 +22,12 @@ import static com.softawii.curupira.v2.parser.DiscordToJavaParser.getParameterFr
 
 class CommandHandler {
     private static final Logger logger = LoggerFactory.getLogger(CommandHandler.class);
-    private JDA jda;
-    private Object instance;
-    private Method method;
+    private final JDA jda;
+    private final Object instance;
+    private final Method method;
+
     private List<OptionData> options;
+    private boolean ephemeral;
 
     public CommandHandler(JDA jda, Object instance, Method method) {
         this.jda = jda;
@@ -63,6 +65,7 @@ class CommandHandler {
         String name = commandInfo.name();
 
         // getting the options
+        this.ephemeral = commandInfo.ephemeral();
         this.options = mapOptions();
 
         // Log
@@ -104,7 +107,7 @@ class CommandHandler {
         Object result = method.invoke(instance, getParameters(event));
         // something to reply
         if(result != null) {
-            JavaToDiscordParser.responseFromCommandEvent(event, result);
+            JavaToDiscordParser.responseFromCommandEvent(event, result, ephemeral);
         }
     }
 }

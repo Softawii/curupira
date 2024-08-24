@@ -7,21 +7,20 @@ import com.softawii.curupira.v2.annotations.RequestInfo;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.utils.messages.MessagePollBuilder;
 import net.dv8tion.jda.api.utils.messages.MessagePollData;
 
 @DiscordController(value = "bar", description = "foo foo foo", parent = "fuo")
 public class Foo {
 
-    @DiscordCommand(name = "baz", description = "baz baz baz")
-    public void baz(SlashCommandInteractionEvent event,
+    @DiscordCommand(name = "baz", description = "baz baz baz", ephemeral = true)
+    public String baz(SlashCommandInteractionEvent event,
                     @RequestInfo Member member,
                     @DiscordParameter(name = "name", description = "Your name") String name,
                     @DiscordParameter(name = "age", description = "Your age") Integer age,
                     @DiscordParameter(name = "channel", description = "Select channel") MessageChannelUnion channel) {
         channel.sendMessage("test").queue();
-        event.reply("Hello " + name + ", you are " + age + " years old and your id is " + member.getId()).queue();
+
+        return "Hello " + name + " you are " + age + " years old";
     }
 
     @DiscordCommand(name = "qux", description = "qux qux qux")

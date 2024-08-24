@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
 public @interface DiscordCommand {
     String name() default "";
     String description() default "";
+    boolean ephemeral() default false;
     DiscordEnvironment environment() default DiscordEnvironment.SERVER;
     Permission[] permissions() default {};
     Command.Type type() default Command.Type.SLASH;
