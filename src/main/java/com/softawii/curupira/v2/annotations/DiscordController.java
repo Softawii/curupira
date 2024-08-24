@@ -24,5 +24,6 @@ public @interface DiscordController {
     // I8n properties
     String resource() default "";
     DiscordLocale[] locales() default {};
+    DiscordLocale defaultLocale() default DiscordLocale.ENGLISH_US;
 
 }

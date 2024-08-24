@@ -3,20 +3,26 @@ package com.softawii.curupira.v2.core;
 import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.DiscordParameter;
+import com.softawii.curupira.v2.api.TextLocaleResponse;
 import com.softawii.curupira.v2.parser.JavaToDiscordParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
+import net.dv8tion.jda.internal.interactions.command.localization.LocalizationMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Text;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.softawii.curupira.v2.parser.DiscordToJavaParser.getParameterFromEvent;
 
@@ -25,14 +31,16 @@ class CommandHandler {
     private final JDA jda;
     private final Object instance;
     private final Method method;
+    private final LocalizationFunction localization;
 
     private List<OptionData> options;
     private boolean ephemeral;
 
-    public CommandHandler(JDA jda, Object instance, Method method) {
+    public CommandHandler(JDA jda, Object instance, Method method, LocalizationFunction localization) {
         this.jda = jda;
         this.method = method;
         this.instance = instance;
+        this.localization = localization;
 
         register();
     }
@@ -107,6 +115,18 @@ class CommandHandler {
         Object result = method.invoke(instance, getParameters(event));
         // something to reply
         if(result != null) {
+            if(result instanceof TextLocaleResponse response) {
+                Map<DiscordLocale, String> locales = localization.apply(response.code());
+                String mask;
+                if(locales.containsKey(event.getUserLocale())) {
+                    mask = locales.get(event.getUserLocale());
+                } else {
+                    mask = locales.get(DiscordLocale.ENGLISH_US);
+                }
+
+                result = String.format(mask, response.args());
+            }
+
             JavaToDiscordParser.responseFromCommandEvent(event, result, ephemeral);
         }
     }

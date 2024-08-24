@@ -4,12 +4,14 @@ import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.DiscordParameter;
 import com.softawii.curupira.v2.annotations.RequestInfo;
+import com.softawii.curupira.v2.api.TextLocaleResponse;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.utils.messages.MessagePollData;
+import org.w3c.dom.Text;
 
 @DiscordController(value = "bar", description = "foo foo foo", parent = "foo", permissions = {Permission.ADMINISTRATOR}, resource = "i18n", locales = {DiscordLocale.PORTUGUESE_BRAZILIAN})
 public class Foo {
@@ -34,10 +36,10 @@ public class Foo {
 //    }
 //
     @DiscordCommand(name = "charlie", description = "charlie charlie charlie")
-    public MessagePollData charlie(
+    public TextLocaleResponse charlie(
                     @RequestInfo Member member,
                     @DiscordParameter(name = "poll", description = "pool name") String name) {
 
-        return MessagePollData.builder(name).addAnswer("yes").addAnswer("no").build();
+        return new TextLocaleResponse("foo.bar.charlie.response.ok", name);
     }
 }

@@ -1,5 +1,6 @@
 package com.softawii.curupira.v2.parser;
 
+import com.softawii.curupira.v2.api.TextLocaleResponse;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;

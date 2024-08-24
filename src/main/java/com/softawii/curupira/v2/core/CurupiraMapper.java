@@ -7,20 +7,21 @@ import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
 import net.dv8tion.jda.api.interactions.commands.localization.ResourceBundleLocalizationFunction;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 class CurupiraMapper {
 
@@ -73,7 +74,20 @@ class CurupiraMapper {
     }
 
     private LocalizationFunction getLocalizationFunction(DiscordController controllerInfo) {
-        return controllerInfo.resource().isBlank() ? null : ResourceBundleLocalizationFunction.fromBundles(controllerInfo.resource(), controllerInfo.locales()).build();
+        if (controllerInfo.resource().isBlank()) return null;
+
+        DiscordLocale[] locales = getLocales(controllerInfo);
+        return ResourceBundleLocalizationFunction.fromBundles(controllerInfo.resource(), locales).build();
+    }
+
+    private DiscordLocale[] getLocales(DiscordController controllerInfo) {
+        List<DiscordLocale> locales = new ArrayList<>();
+        locales.add(controllerInfo.defaultLocale());
+        locales.addAll(Arrays.asList(controllerInfo.locales()));
+
+        DiscordLocale[] localesArray = new DiscordLocale[locales.size()];
+        locales.toArray(localesArray);
+        return localesArray;
     }
 
     private void scanClass(Class clazz) {
@@ -91,13 +105,13 @@ class CurupiraMapper {
 
         for(Method method : methods) {
             this.logger.info("Found method: {}", method.getName());
-            CommandHandler handler = scanMethod(method);
+            CommandHandler handler = scanMethod(method, localization);
             registerCommand(handler, controllerInfo, method.getAnnotation(DiscordCommand.class), localization);
         }
     }
 
-    private CommandHandler scanMethod(Method method) {
-        return new CommandHandler(jda, context.getInstance(method.getDeclaringClass()), method);
+    private CommandHandler scanMethod(Method method, LocalizationFunction localization) {
+        return new CommandHandler(jda, context.getInstance(method.getDeclaringClass()), method, localization);
     }
 
     private void registerCommand(CommandHandler handler, DiscordController controllerInfo, DiscordCommand commandInfo, LocalizationFunction localization) {
