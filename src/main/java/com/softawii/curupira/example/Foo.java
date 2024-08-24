@@ -4,12 +4,13 @@ import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.DiscordParameter;
 import com.softawii.curupira.v2.annotations.RequestInfo;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.utils.messages.MessagePollData;
 
-@DiscordController(value = "bar", description = "foo foo foo", parent = "fuo")
+@DiscordController(value = "bar", description = "foo foo foo", parent = "fuo", permissions = {Permission.ADMINISTRATOR})
 public class Foo {
 
     @DiscordCommand(name = "baz", description = "baz baz baz", ephemeral = true)

@@ -2,10 +2,12 @@ package com.softawii.curupira.v2.core;
 
 import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
+import com.softawii.curupira.v2.enums.DiscordEnvironment;
 import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
@@ -99,6 +101,8 @@ class CurupiraMapper {
 
         if(!this.data.containsKey(name[0])) {
             CommandDataImpl commandData = new CommandDataImpl(name[0], controllerInfo.description());
+            commandData.setDefaultPermissions(DefaultMemberPermissions.enabledFor(controllerInfo.permissions()));
+            commandData.setGuildOnly(controllerInfo.environment() == DiscordEnvironment.SERVER);
             this.data.put(name[0], commandData);
         }
 
@@ -122,7 +126,6 @@ class CurupiraMapper {
                 SubcommandGroupData groupData = new SubcommandGroupData(name[1], controllerInfo.description());
                 SubcommandData subcommandData = new SubcommandData(name[2], commandInfo.description());
                 subcommandData.addOptions(handler.getOptions());
-
                 groupData.addSubcommands(subcommandData);
                 this.data.get(name[0]).addSubcommandGroups(groupData);
             });
@@ -133,6 +136,7 @@ class CurupiraMapper {
         if(commands.containsKey(event.getFullCommandName())) {
             CommandHandler handler = commands.get(event.getFullCommandName());
             try {
+                // TODO: Validate Environment
                 handler.execute(event);
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new RuntimeException(e);

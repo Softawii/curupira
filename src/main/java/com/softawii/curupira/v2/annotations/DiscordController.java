@@ -1,5 +1,7 @@
 package com.softawii.curupira.v2.annotations;
 
+import com.softawii.curupira.v2.enums.DiscordEnvironment;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 
 import java.lang.annotation.ElementType;
@@ -15,6 +17,10 @@ public @interface DiscordController {
     String parent() default "";
     String description() default "";
     boolean hidden() default false;
+    // Protection properties
+    // TODO: Owners Only
+    Permission[] permissions() default {};
+    DiscordEnvironment environment() default DiscordEnvironment.SERVER;
     // I8n properties
     String resource() default "";
     DiscordLocale[] locales() default {};

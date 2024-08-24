@@ -26,7 +26,7 @@ public class Main {
         JDABuilder builder = JDABuilder.createDefault(token);
         JDA JDA = builder.build();
 
-        boolean reset = false;
+        boolean reset = true;
         CurupiraBoot curupira = new CurupiraBoot(JDA, context, reset, pkg);
 
         JDA.awaitReady();
