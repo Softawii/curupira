@@ -13,7 +13,8 @@ import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.utils.messages.MessagePollData;
 import org.w3c.dom.Text;
 
-@DiscordController(value = "bar", description = "foo foo foo", parent = "foo", permissions = {Permission.ADMINISTRATOR}, resource = "i18n", locales = {DiscordLocale.PORTUGUESE_BRAZILIAN})
+@DiscordController(value = "bar", description = "foo foo foo", parent = "foo", permissions = {Permission.ADMINISTRATOR},
+                    resource = "i18n", locales = {DiscordLocale.ENGLISH_US}, defaultLocale = DiscordLocale.PORTUGUESE_BRAZILIAN)
 public class Foo {
 
 //    @DiscordCommand(name = "baz", description = "baz baz baz", ephemeral = true)

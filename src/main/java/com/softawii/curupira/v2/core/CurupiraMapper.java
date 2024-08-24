@@ -94,6 +94,7 @@ class CurupiraMapper {
         List<Method> methods = ScanUtils.getMethodsAnnotatedWith(clazz, DiscordCommand.class);
         DiscordController controllerInfo = (DiscordController) clazz.getAnnotation(DiscordController.class);
         LocalizationFunction localization = getLocalizationFunction(controllerInfo);
+        DiscordLocale defaultLocale = controllerInfo.defaultLocale();
 
         if(controllerInfo.hidden() && !controllerInfo.parent().isBlank())
             throw new RuntimeException("Controller cannot be hidden and have a parent at the same time");
@@ -105,13 +106,13 @@ class CurupiraMapper {
 
         for(Method method : methods) {
             this.logger.info("Found method: {}", method.getName());
-            CommandHandler handler = scanMethod(method, localization);
+            CommandHandler handler = scanMethod(method, localization, defaultLocale);
             registerCommand(handler, controllerInfo, method.getAnnotation(DiscordCommand.class), localization);
         }
     }
 
-    private CommandHandler scanMethod(Method method, LocalizationFunction localization) {
-        return new CommandHandler(jda, context.getInstance(method.getDeclaringClass()), method, localization);
+    private CommandHandler scanMethod(Method method, LocalizationFunction localization, DiscordLocale defaultLocale) {
+        return new CommandHandler(jda, context.getInstance(method.getDeclaringClass()), method, localization, defaultLocale);
     }
 
     private void registerCommand(CommandHandler handler, DiscordController controllerInfo, DiscordCommand commandInfo, LocalizationFunction localization) {

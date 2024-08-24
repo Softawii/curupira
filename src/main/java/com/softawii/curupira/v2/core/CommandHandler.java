@@ -31,16 +31,19 @@ class CommandHandler {
     private final JDA jda;
     private final Object instance;
     private final Method method;
+    // i18n
     private final LocalizationFunction localization;
+    private final DiscordLocale defaultLocale;
 
     private List<OptionData> options;
     private boolean ephemeral;
 
-    public CommandHandler(JDA jda, Object instance, Method method, LocalizationFunction localization) {
+    public CommandHandler(JDA jda, Object instance, Method method, LocalizationFunction localization, DiscordLocale defaultLocale) {
         this.jda = jda;
         this.method = method;
         this.instance = instance;
         this.localization = localization;
+        this.defaultLocale = defaultLocale;
 
         register();
     }
@@ -121,7 +124,7 @@ class CommandHandler {
                 if(locales.containsKey(event.getUserLocale())) {
                     mask = locales.get(event.getUserLocale());
                 } else {
-                    mask = locales.get(DiscordLocale.ENGLISH_US);
+                    mask = locales.get(defaultLocale);
                 }
 
                 result = String.format(mask, response.args());
