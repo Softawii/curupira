@@ -17,4 +17,5 @@ public @interface DiscordParameter {
     OptionType type() default OptionType.UNKNOWN;
     boolean autoComplete() default false;
     // TODO: Add choice support
+    // TODO: Add range support (arg1, arg2, arg3, etc.)
 }

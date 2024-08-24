@@ -1,4 +1,4 @@
-package com.softawii.curupira.example;
+package com.softawii.curupira.example.controller;
 
 import com.softawii.curupira.v2.annotations.*;
 import com.softawii.curupira.v2.api.TextLocaleResponse;
@@ -8,11 +8,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
-import net.dv8tion.jda.api.utils.messages.MessagePollData;
-import org.w3c.dom.Text;
 
 @DiscordController(value = "bar", description = "foo foo foo", parent = "foo", permissions = {Permission.ADMINISTRATOR},
                     resource = "i18n", locales = {DiscordLocale.PORTUGUESE_BRAZILIAN})
@@ -52,6 +48,7 @@ public class Foo {
                     @RequestInfo Member member,
                     @DiscordParameter(name = "poll", description = "pool name") String name) {
 
-        return new TextLocaleResponse("foo.bar.charlie.response.ok", name);
+        throw new RuntimeException("This is a test exception");
+        // return new TextLocaleResponse("foo.bar.charlie.response.ok", name);
     }
 }

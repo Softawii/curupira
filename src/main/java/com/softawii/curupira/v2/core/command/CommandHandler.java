@@ -1,4 +1,4 @@
-package com.softawii.curupira.v2.core;
+package com.softawii.curupira.v2.core.command;
 
 import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
@@ -14,10 +14,8 @@ import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
-import net.dv8tion.jda.internal.interactions.command.localization.LocalizationMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Text;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

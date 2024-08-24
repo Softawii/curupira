@@ -1,15 +1,13 @@
 package com.softawii;
 
-import com.softawii.curupira.example.Foo;
+import com.softawii.curupira.example.controller.Foo;
+import com.softawii.curupira.example.exceptions.ExceptionHandler;
 import com.softawii.curupira.v2.core.CurupiraBoot;
 import com.softawii.curupira.v2.integration.BasicContextProvider;
-import com.softawii.curupira.v2.integration.ContextProvider;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Method;
 
 public class Main {
 
@@ -22,6 +20,7 @@ public class Main {
         String pkg   = "com.softawii.curupira.example";
 
         context.registerInstance(Foo.class, new Foo());
+        context.registerInstance(ExceptionHandler.class, new ExceptionHandler());
 
         JDABuilder builder = JDABuilder.createDefault(token);
         JDA JDA = builder.build();

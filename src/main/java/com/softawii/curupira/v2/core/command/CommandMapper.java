@@ -1,11 +1,13 @@
-package com.softawii.curupira.v2.core;
+package com.softawii.curupira.v2.core.command;
 
 import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
+import com.softawii.curupira.v2.core.exception.ExceptionMapper;
 import com.softawii.curupira.v2.enums.DiscordEnvironment;
 import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
@@ -14,16 +16,14 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
 import net.dv8tion.jda.api.interactions.commands.localization.ResourceBundleLocalizationFunction;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-class CurupiraMapper {
+public class CommandMapper {
 
     private final Logger logger;
     private final JDA jda;
@@ -31,15 +31,17 @@ class CurupiraMapper {
     private final boolean registerCommandsToDiscord;
     private final String[] packages;
 
+    private final ExceptionMapper exceptionMapper;
     private final Map<String, CommandHandler> commands;
     private final Map<String, CommandDataImpl> data;
 
-    public CurupiraMapper(JDA jda, ContextProvider context, boolean registerCommandsToDiscord, String ... packages) {
-        this.logger = LoggerFactory.getLogger(CurupiraMapper.class);
+    public CommandMapper(JDA jda, ContextProvider context, ExceptionMapper exceptionMapper, boolean registerCommandsToDiscord, String ... packages) {
+        this.logger = LoggerFactory.getLogger(CommandMapper.class);
         this.jda = jda;
         this.context = context;
         this.registerCommandsToDiscord = registerCommandsToDiscord;
         this.packages = packages;
+        this.exceptionMapper = exceptionMapper;
 
         this.commands = new HashMap<>();
         this.data = new HashMap<>();
@@ -155,14 +157,14 @@ class CurupiraMapper {
         }
     }
 
-    public void slashCommandInteractionReceived(SlashCommandInteractionEvent event) {
+    public void onCommandInteractionReceived(GenericCommandInteractionEvent event) {
         if(commands.containsKey(event.getFullCommandName())) {
             CommandHandler handler = commands.get(event.getFullCommandName());
             try {
                 // TODO: Validate Environment
                 handler.execute(event);
             } catch (InvocationTargetException | IllegalAccessException e) {
-                throw new RuntimeException(e);
+                exceptionMapper.handle(e, event);
             }
         } else {
             this.logger.error("Command not found: {}", event.getFullCommandName());
