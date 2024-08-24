@@ -10,6 +10,8 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
+import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
+import net.dv8tion.jda.api.interactions.commands.localization.ResourceBundleLocalizationFunction;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,9 +72,14 @@ class CurupiraMapper {
         }
     }
 
+    private LocalizationFunction getLocalizationFunction(DiscordController controllerInfo) {
+        return controllerInfo.resource().isBlank() ? null : ResourceBundleLocalizationFunction.fromBundles(controllerInfo.resource(), controllerInfo.locales()).build();
+    }
+
     private void scanClass(Class clazz) {
         List<Method> methods = ScanUtils.getMethodsAnnotatedWith(clazz, DiscordCommand.class);
         DiscordController controllerInfo = (DiscordController) clazz.getAnnotation(DiscordController.class);
+        LocalizationFunction localization = getLocalizationFunction(controllerInfo);
 
         if(controllerInfo.hidden() && !controllerInfo.parent().isBlank())
             throw new RuntimeException("Controller cannot be hidden and have a parent at the same time");
@@ -85,7 +92,7 @@ class CurupiraMapper {
         for(Method method : methods) {
             this.logger.info("Found method: {}", method.getName());
             CommandHandler handler = scanMethod(method);
-            registerCommand(handler, controllerInfo, method.getAnnotation(DiscordCommand.class));
+            registerCommand(handler, controllerInfo, method.getAnnotation(DiscordCommand.class), localization);
         }
     }
 
@@ -93,7 +100,7 @@ class CurupiraMapper {
         return new CommandHandler(jda, context.getInstance(method.getDeclaringClass()), method);
     }
 
-    private void registerCommand(CommandHandler handler, DiscordController controllerInfo, DiscordCommand commandInfo) {
+    private void registerCommand(CommandHandler handler, DiscordController controllerInfo, DiscordCommand commandInfo, LocalizationFunction localization) {
         this.logger.info("Registering command: {}", handler.getFullCommandName());
         String[] name = handler.getFullCommandName().split(" ");
 
@@ -103,6 +110,7 @@ class CurupiraMapper {
             CommandDataImpl commandData = new CommandDataImpl(name[0], controllerInfo.description());
             commandData.setDefaultPermissions(DefaultMemberPermissions.enabledFor(controllerInfo.permissions()));
             commandData.setGuildOnly(controllerInfo.environment() == DiscordEnvironment.SERVER);
+            if(localization != null) commandData.setLocalizationFunction(localization);
             this.data.put(name[0], commandData);
         }
 
