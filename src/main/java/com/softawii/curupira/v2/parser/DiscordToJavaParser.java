@@ -1,12 +1,17 @@
 package com.softawii.curupira.v2.parser;
 
 import com.softawii.curupira.v2.annotations.DiscordParameter;
+import com.softawii.curupira.v2.annotations.LocaleType;
 import com.softawii.curupira.v2.annotations.RequestInfo;
+import com.softawii.curupira.v2.enums.LocaleTypeEnum;
+import com.softawii.curupira.v2.localization.LocalizationManager;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 
@@ -14,8 +19,18 @@ import java.lang.reflect.Parameter;
 
 public class DiscordToJavaParser {
 
-    public static Object getParameterFromEvent(CommandInteractionPayload event, Parameter parameter) {
-        if(parameter.getType().equals(SlashCommandInteractionEvent.class)) {
+    public static Object getParameterFromEvent(CommandInteractionPayload event, Parameter parameter, LocalizationManager localization) {
+        if(LocalizationManager.class.isAssignableFrom(parameter.getType())) {
+            return localization;
+        }
+        else if(JDA.class.isAssignableFrom(parameter.getType())) {
+            return event.getJDA();
+        }
+        else if(parameter.getType().equals(DiscordLocale.class) && parameter.isAnnotationPresent(LocaleType.class)) {
+            if(parameter.getAnnotation(LocaleType.class).value() == LocaleTypeEnum.GUILD) return event.getGuildLocale();
+            else return event.getUserLocale();
+        }
+        else if(parameter.getType().equals(SlashCommandInteractionEvent.class)) {
             return event;
         }
         else if(parameter.getType().equals(String.class)) {
