@@ -19,6 +19,7 @@ import java.util.List;
 
 public class JavaToDiscordParser {
 
+    // TODO: Refactor this method to use a switch statement or a map to avoid the if-else chain
     public static OptionType getTypeFromClass(Class clazz) {
         if (clazz.equals(String.class)) {
             return OptionType.STRING;
@@ -44,6 +45,7 @@ public class JavaToDiscordParser {
             throw new RuntimeException("Type not supported");
     }
 
+    // TODO: I don't known how to refactor this method to avoid the if-else chain, maybe in the future I will find a way
     public static void responseFromCommandEvent(GenericCommandInteractionEvent event, Object result, boolean ephemeral) {
         if(result instanceof String response) {
             event.reply(response).setEphemeral(ephemeral).queue();

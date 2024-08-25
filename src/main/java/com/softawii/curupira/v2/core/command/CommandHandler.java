@@ -45,8 +45,16 @@ class CommandHandler {
         register();
     }
 
+    public Class<?> getControllerClass() {
+        return method.getDeclaringClass();
+    }
+
     public List<OptionData> getOptions() {
         return options;
+    }
+
+    public LocalizationManager getLocalization() {
+        return localization;
     }
 
     public String getFullCommandName() {

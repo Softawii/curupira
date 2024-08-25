@@ -10,8 +10,13 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
+import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 
@@ -19,7 +24,8 @@ import java.lang.reflect.Parameter;
 
 public class DiscordToJavaParser {
 
-    public static Object getParameterFromEvent(CommandInteractionPayload event, Parameter parameter, LocalizationManager localization) {
+    // TODO: Refactor this method to use a switch statement or a map to avoid the if-else chain
+    public static Object getParameterFromEvent(Interaction event, Parameter parameter, LocalizationManager localization) {
         if(LocalizationManager.class.isAssignableFrom(parameter.getType())) {
             return localization;
         }
@@ -33,32 +39,47 @@ public class DiscordToJavaParser {
         else if(parameter.getType().equals(SlashCommandInteractionEvent.class)) {
             return event;
         }
-        else if(parameter.getType().equals(String.class)) {
-            return getString(event, parameter);
+        else if(parameter.getType().equals(UserContextInteractionEvent.class)) {
+            return event;
         }
-        else if(parameter.getType().equals(Double.class)) {
-            return getDouble(event, parameter);
+        else if(parameter.getType().equals(MessageContextInteractionEvent.class)) {
+            return event;
         }
-        else if(parameter.getType().equals(Integer.class)) {
-            return getInteger(event, parameter);
+        else if(parameter.getType().equals(ModalInteractionEvent.class)) {
+            return event;
         }
-        else if(parameter.getType().equals(Long.class)) {
-            return getLong(event, parameter);
+        else if(parameter.getType().equals(ButtonInteractionEvent.class)) {
+            return event;
         }
-        else if(parameter.getType().equals(Boolean.class)) {
-            return getBoolean(event, parameter);
+        else if(parameter.getType().isAssignableFrom(Interaction.class)) {
+            return event;
         }
-        else if(parameter.getType().equals(User.class)) {
-            return getUser(event, parameter);
+        else if(parameter.getType().equals(String.class) && event instanceof CommandInteractionPayload payload) {
+            return getString(payload, parameter);
         }
-        else if(parameter.getType().equals(Member.class)) {
-            return getMember(event, parameter);
+        else if(parameter.getType().equals(Double.class) && event instanceof CommandInteractionPayload payload) {
+            return getDouble(payload, parameter);
         }
-        else if(parameter.getType().equals(Guild.class)) {
-            return getGuild(event, parameter);
+        else if(parameter.getType().equals(Integer.class) && event instanceof CommandInteractionPayload payload) {
+            return getInteger(payload, parameter);
         }
-        else if(MessageChannelUnion.class.isAssignableFrom(parameter.getType())) {
-            return getChannel(event, parameter);
+        else if(parameter.getType().equals(Long.class) && event instanceof CommandInteractionPayload payload) {
+            return getLong(payload, parameter);
+        }
+        else if(parameter.getType().equals(Boolean.class) && event instanceof CommandInteractionPayload payload) {
+            return getBoolean(payload, parameter);
+        }
+        else if(parameter.getType().equals(User.class) && event instanceof CommandInteractionPayload payload) {
+            return getUser(payload, parameter);
+        }
+        else if(parameter.getType().equals(Member.class) && event instanceof CommandInteractionPayload payload) {
+            return getMember(payload, parameter);
+        }
+        else if(parameter.getType().equals(Guild.class) && event instanceof CommandInteractionPayload payload) {
+            return getGuild(payload, parameter);
+        }
+        else if(MessageChannelUnion.class.isAssignableFrom(parameter.getType()) && event instanceof CommandInteractionPayload payload) {
+            return getChannel(payload, parameter);
         }
         else {
             return null;

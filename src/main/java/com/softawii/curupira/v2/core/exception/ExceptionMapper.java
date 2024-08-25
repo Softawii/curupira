@@ -5,6 +5,7 @@ import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.DiscordException;
 import com.softawii.curupira.v2.annotations.DiscordExceptions;
 import com.softawii.curupira.v2.integration.ContextProvider;
+import com.softawii.curupira.v2.localization.LocalizationManager;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.interactions.Interaction;
 import org.slf4j.Logger;
@@ -19,13 +20,16 @@ import java.util.Set;
 
 public class ExceptionMapper {
     private static final Logger logger = LoggerFactory.getLogger(ExceptionMapper.class);
-    private final Map<Class<? extends Throwable>, Method> handlers;
     private final ContextProvider context;
-    private Object instance;
+    private final Map<String, ExceptionHandler> handlerByPackage;
+    private final Map<Class<?>, ExceptionHandler> handlerByClass;
+    private ExceptionHandler defaultHandler;
 
     public ExceptionMapper(ContextProvider context, String ... packages) {
-        this.handlers = new HashMap<>();
         this.context = context;
+        this.handlerByPackage = new HashMap<>();
+        this.handlerByClass = new HashMap<>();
+        this.defaultHandler = null;
 
         scanPackages(packages);
     }
@@ -38,60 +42,75 @@ public class ExceptionMapper {
             classes.addAll(ScanUtils.getClassesInPackage(pkg).stream().filter(clazz -> clazz.isAnnotationPresent(DiscordExceptions.class)).toList());
         }
 
-        if(classes.stream().count() > 1) {
-            throw new RuntimeException("Only one class can have the DiscordExceptions annotation");
-        }
-
-        if(classes.stream().count() == 1) {
-            scanClass(classes.stream().findFirst().get());
+        for(Class<?> clazz : classes) {
+            scanClass(clazz);
         }
     }
 
     private void scanClass(Class<?> clazz) {
-        this.instance = context.getInstance(clazz);
+        DiscordExceptions annotation = clazz.getAnnotation(DiscordExceptions.class);
+        ExceptionHandler handler = new ExceptionHandler(context.getInstance(clazz));
 
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (method.isAnnotationPresent(DiscordException.class)) {
-                DiscordException annotation = method.getAnnotation(DiscordException.class);
+        // define providers
+        if(annotation.classes().length == 0 && annotation.packages().length == 0) {
+            defaultHandler = handler;
+        } else {
+            for(Class<?> exception : annotation.classes()) {
+                handlerByClass.put(exception, handler);
+            }
 
-                if(method.getParameters().length != 2 && method.getParameters()[0].getType() != Throwable.class && method.getParameters()[1].getType() != Interaction.class) {
-                    throw new RuntimeException("Invalid handler method signature: " + method.getName());
-                }
-
-                for (Class<? extends Throwable> exception : annotation.value()) {
-                    handlers.put(exception, method);
-                }
+            for(String pkg : annotation.packages()) {
+                handlerByPackage.put(pkg, handler);
             }
         }
     }
 
-    private Method findHandlerMethod(Class<?> exceptionClass) {
-        Method handlerMethod = handlers.get(exceptionClass);
-        if (handlerMethod == null) {
-            // Check for superclass handlers if a direct one is not found
-            for (Class<?> superClass = exceptionClass.getSuperclass(); superClass != null; superClass = superClass.getSuperclass()) {
-                handlerMethod = handlers.get(superClass);
-                if (handlerMethod != null) {
+    private ExceptionHandler findHandlerByCaller(Class<?> caller) {
+        // 1. option 1 - check if the caller class is in the map
+        ExceptionHandler handler = handlerByClass.get(caller);
+
+        // 2. option 2 - super classes
+        if(handler == null) {
+            for (Class<?> superClass = caller.getSuperclass(); superClass != null; superClass = superClass.getSuperclass()) {
+                handler = handlerByClass.get(superClass);
+                if (handler != null) {
                     break;
                 }
             }
         }
-        return handlerMethod;
+
+        // 3. option 3 - check if the caller package is in the map
+        if (handler == null) {
+            String pkg = caller.getPackageName();
+            while (!pkg.isEmpty()) {
+                handler = handlerByPackage.get(pkg);
+                if (handler != null) {
+                    break;
+                }
+
+                // Move up to the superpackage
+                int lastDotIndex = pkg.lastIndexOf('.');
+                if (lastDotIndex == -1) {
+                    break;
+                }
+                pkg = pkg.substring(0, lastDotIndex);
+            }
+        }
+
+        if (handler == null) {
+            handler = defaultHandler;
+        }
+
+        return handler;
     }
 
-    public void handle(Throwable exception, Interaction interaction) {
-        Class<?> exceptionClass = exception.getClass();
-        Method handlerMethod = findHandlerMethod(exceptionClass);
+    public void handle(Class<?> caller, Throwable exception, Interaction interaction, LocalizationManager localization) {
+        ExceptionHandler handler = findHandlerByCaller(caller);
 
-        if (handlerMethod != null) {
-            try {
-                // Invoke the handler method
-                handlerMethod.invoke(this.instance, exception, interaction);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException("Failed to invoke handler method: " + handlerMethod.getName(), e);
-            }
+        if(handler != null) {
+            handler.handle(exception, interaction, localization);
         } else {
-            logger.error("Unhandled exception", exception);
+            throw new RuntimeException("No handler found for exception: " + exception.getClass().getName());
         }
     }
 

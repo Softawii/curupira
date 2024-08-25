@@ -164,7 +164,7 @@ public class CommandMapper {
                 // TODO: Validate Environment
                 handler.execute(event);
             } catch (InvocationTargetException | IllegalAccessException e) {
-                exceptionMapper.handle(e, event);
+                exceptionMapper.handle(handler.getControllerClass(), e, event, handler.getLocalization());
             }
         } else {
             this.logger.error("Command not found: {}", event.getFullCommandName());

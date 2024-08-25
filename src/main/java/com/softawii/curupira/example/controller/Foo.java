@@ -48,7 +48,7 @@ public class Foo {
                     @RequestInfo Member member,
                     @DiscordParameter(name = "poll", description = "pool name") String name) {
 
-        throw new RuntimeException("This is a test exception");
+        throw new NullPointerException("This is a test exception");
         // return new TextLocaleResponse("foo.bar.charlie.response.ok", name);
     }
 }
