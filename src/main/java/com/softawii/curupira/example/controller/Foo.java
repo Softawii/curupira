@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
+import net.dv8tion.jda.api.utils.messages.MessagePollData;
 
 @DiscordController(value = "bar", description = "foo foo foo", parent = "foo", permissions = {Permission.ADMINISTRATOR},
                     resource = "i18n", locales = {DiscordLocale.PORTUGUESE_BRAZILIAN})
@@ -26,21 +27,17 @@ public class Foo {
 //    }
 
     @DiscordCommand(name = "qux", description = "qux qux qux")
-    public MessageEmbed qux(JDA jda,
-                            LocalizationManager localization,
-                            @RequestInfo Member member,
-                            @LocaleType DiscordLocale locale,
-                            @DiscordParameter(name = "title", description = "embed title") String title,
-                            @DiscordParameter(name = "description", description = "embed description") String description) {
+    public MessagePollData qux(JDA jda,
+                               LocalizationManager localization,
+                               @RequestInfo Member member,
+                               @LocaleType DiscordLocale locale,
+                               @DiscordParameter(name = "title", description = "embed title") String title,
+                               @DiscordParameter(name = "description", description = "embed description") String description) {
 
         String titleMessage = localization.getLocalizedString("foo.bar.qux.embed.title", locale, title, member.getNickname());
         String descriptionMessage = localization.getLocalizedString("foo.bar.qux.embed.description", locale, member.getEffectiveName(), jda.getSelfUser().getEffectiveName());
 
-        return new EmbedBuilder()
-                .setTitle(titleMessage)
-                .setDescription(descriptionMessage)
-                .addField("Field 1", description, false)
-                .build();
+        return MessagePollData.builder(titleMessage).addAnswer("yes").addAnswer("no").build();
     }
 
     @DiscordCommand(name = "charlie", description = "charlie charlie charlie")
@@ -48,7 +45,7 @@ public class Foo {
                     @RequestInfo Member member,
                     @DiscordParameter(name = "poll", description = "pool name") String name) {
 
-        throw new NullPointerException("This is a test exception");
+        throw new NullPointerException("test");
         // return new TextLocaleResponse("foo.bar.charlie.response.ok", name);
     }
 }

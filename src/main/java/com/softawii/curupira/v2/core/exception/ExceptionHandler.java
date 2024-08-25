@@ -23,6 +23,7 @@ public class ExceptionHandler {
         this.instance = instance;
         this.handlers = new HashMap<>();
         scanMethods();
+        checkMinimumRequirements();
     }
 
     private void scanMethods() {
@@ -42,6 +43,18 @@ public class ExceptionHandler {
                     handlers.put(exception, method);
                 }
             }
+        }
+    }
+
+    private void checkMinimumRequirements() {
+        // only allow a class with a generic exception handler
+        if(handlers.isEmpty()) {
+            throw new RuntimeException("No exception handlers found");
+        }
+
+        // only allow a class with a generic exception handler
+        if(!handlers.containsKey(Throwable.class)) {
+            throw new RuntimeException("You need to provide a Throwable handler in " + this.instance.getClass().getName());
         }
     }
 

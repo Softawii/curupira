@@ -4,7 +4,12 @@ import com.softawii.curupira.v2.core.command.CommandMapper;
 import com.softawii.curupira.v2.core.exception.ExceptionMapper;
 import com.softawii.curupira.v2.integration.ContextProvider;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.*;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -39,9 +44,38 @@ public class CurupiraBoot extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-        this.logger.debug("Slash command interaction received. Event: {}", event);
+    public void onGenericCommandInteraction(@NotNull GenericCommandInteractionEvent event) {
+        this.logger.debug("Command interaction received. Event: {}", event);
         this.mapper.onCommandInteractionReceived(event);
     }
 
+    @Override
+    public void onModalInteraction(@NotNull ModalInteractionEvent event) {
+        // TODO: implement
+        super.onModalInteraction(event);
+    }
+
+    @Override
+    public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+        // TODO: implement
+        super.onButtonInteraction(event);
+    }
+
+    @Override
+    public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
+        // TODO: implement
+        super.onStringSelectInteraction(event);
+    }
+
+    @Override
+    public void onEntitySelectInteraction(@NotNull EntitySelectInteractionEvent event) {
+        // TODO: implement
+        super.onEntitySelectInteraction(event);
+    }
+
+    @Override
+    public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
+        // TODO: implement
+        super.onCommandAutoCompleteInteraction(event);
+    }
 }

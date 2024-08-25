@@ -4,10 +4,13 @@ import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.DiscordParameter;
 import com.softawii.curupira.v2.api.TextLocaleResponse;
+import com.softawii.curupira.v2.core.exception.MissingPermissionsException;
+import com.softawii.curupira.v2.enums.DiscordEnvironment;
 import com.softawii.curupira.v2.localization.LocalizationManager;
 import com.softawii.curupira.v2.parser.DiscordToJavaParser;
 import com.softawii.curupira.v2.parser.JavaToDiscordParser;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
@@ -24,23 +27,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 class CommandHandler {
+    private static final ChannelType[] PRIVATE_CHANNELS = {
+            ChannelType.PRIVATE,
+            ChannelType.GROUP
+    };
+
     private static final Logger logger = LoggerFactory.getLogger(CommandHandler.class);
     private final JDA jda;
     private final Object instance;
     private final Method method;
     // i18n
     private final LocalizationManager localization;
-    private final DiscordLocale defaultLocale;
+    private final DiscordEnvironment environment;
 
     private List<OptionData> options;
     private boolean ephemeral;
 
-    public CommandHandler(JDA jda, Object instance, Method method, LocalizationFunction localization, DiscordLocale defaultLocale) {
+    public CommandHandler(JDA jda, Object instance, Method method, LocalizationFunction localization, DiscordLocale defaultLocale, DiscordEnvironment environment) {
         this.jda = jda;
         this.method = method;
         this.instance = instance;
-        this.defaultLocale = defaultLocale;
         this.localization = new LocalizationManager(localization, defaultLocale);
+        this.environment = environment;
 
         register();
     }
@@ -120,6 +128,13 @@ class CommandHandler {
     }
 
     public void execute(GenericCommandInteractionEvent event) throws InvocationTargetException, IllegalAccessException {
+        // Guild Only: Discord don't allow to execute commands in DMs
+        // Both: no need to check if the command is available in the guild
+        // Private Only: Discord don't check this
+        if(environment == DiscordEnvironment.PRIVATE && !List.of(PRIVATE_CHANNELS).contains(event.getChannelType())) {
+            throw new MissingPermissionsException();
+        }
+
         Object result = method.invoke(instance, getParameters(event));
         // something to reply
         if(result != null) {

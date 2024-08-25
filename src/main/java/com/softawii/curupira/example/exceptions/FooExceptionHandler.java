@@ -12,12 +12,12 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 
-@DiscordExceptions(packages = "com.softawii.curupira.example")
+@DiscordExceptions
 public class FooExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FooExceptionHandler.class);
 
-    @DiscordException(NullPointerException.class)
+    @DiscordException(Throwable.class)
     public void handle(Throwable exception, Interaction interaction, LocalizationManager localization, @LocaleType DiscordLocale locale) {
         LOGGER.error("An error occurred 2, info,  exception: {}, user id: {}, user name: {}", exception, interaction.getUser().getIdLong(), interaction.getUser().getName());
 

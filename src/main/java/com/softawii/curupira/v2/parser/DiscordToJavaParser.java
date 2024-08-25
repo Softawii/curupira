@@ -24,7 +24,7 @@ import java.lang.reflect.Parameter;
 
 public class DiscordToJavaParser {
 
-    // TODO: Refactor this method to use a switch statement or a map to avoid the if-else chain
+    // TODO: V2.? Refactor this method to use a switch statement or a map to avoid the if-else chain
     public static Object getParameterFromEvent(Interaction event, Parameter parameter, LocalizationManager localization) {
         if(LocalizationManager.class.isAssignableFrom(parameter.getType())) {
             return localization;

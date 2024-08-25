@@ -18,7 +18,7 @@ public @interface DiscordController {
     String description() default "";
     boolean hidden() default false;
     // Protection properties
-    // TODO: Owners Only
+    // TODO: V2.1 Owners Only
     Permission[] permissions() default {};
     DiscordEnvironment environment() default DiscordEnvironment.SERVER;
     // I8n properties

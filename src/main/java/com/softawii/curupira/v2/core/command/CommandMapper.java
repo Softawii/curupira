@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
+import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
@@ -108,13 +109,13 @@ public class CommandMapper {
 
         for(Method method : methods) {
             this.logger.info("Found method: {}", method.getName());
-            CommandHandler handler = scanMethod(method, localization, defaultLocale);
+            CommandHandler handler = scanMethod(method, localization, defaultLocale, controllerInfo.environment());
             registerCommand(handler, controllerInfo, method.getAnnotation(DiscordCommand.class), localization);
         }
     }
 
-    private CommandHandler scanMethod(Method method, LocalizationFunction localization, DiscordLocale defaultLocale) {
-        return new CommandHandler(jda, context.getInstance(method.getDeclaringClass()), method, localization, defaultLocale);
+    private CommandHandler scanMethod(Method method, LocalizationFunction localization, DiscordLocale defaultLocale, DiscordEnvironment environment) {
+        return new CommandHandler(jda, context.getInstance(method.getDeclaringClass()), method, localization, defaultLocale, environment);
     }
 
     private void registerCommand(CommandHandler handler, DiscordController controllerInfo, DiscordCommand commandInfo, LocalizationFunction localization) {
@@ -161,14 +162,13 @@ public class CommandMapper {
         if(commands.containsKey(event.getFullCommandName())) {
             CommandHandler handler = commands.get(event.getFullCommandName());
             try {
-                // TODO: Validate Environment
                 handler.execute(event);
             } catch (InvocationTargetException | IllegalAccessException e) {
                 exceptionMapper.handle(handler.getControllerClass(), e, event, handler.getLocalization());
             }
         } else {
             this.logger.error("Command not found: {}", event.getFullCommandName());
-            event.reply("Command not found").queue();
+            event.reply("Command not found").setEphemeral(true).queue();
         }
     }
 }
