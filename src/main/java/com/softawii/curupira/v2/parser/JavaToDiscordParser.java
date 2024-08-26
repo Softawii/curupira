@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
@@ -51,16 +52,25 @@ public class JavaToDiscordParser {
             case String response -> event.reply(response).setEphemeral(ephemeral).queue();
             case MessageCreateData message -> event.reply(message).setEphemeral(ephemeral).queue();
             case Modal modal -> event.replyModal(modal).queue();
+            case MessagePollData poll -> event.replyPoll(poll).setEphemeral(ephemeral).queue();
+
             case MessageEmbed embed -> event.replyEmbeds(embed).setEphemeral(ephemeral).queue();
             case Collection<?> collection when collection.stream().findFirst().get() instanceof MessageEmbed -> {
                 Collection<MessageEmbed> collectionEmbed = (Collection<MessageEmbed>) collection;
                 event.replyEmbeds(collectionEmbed).setEphemeral(ephemeral).queue();
             }
+
+            case FileUpload file -> event.replyFiles(file).setEphemeral(ephemeral).queue();
             case Collection<?> collection when collection.stream().findFirst().get() instanceof FileUpload -> {
                 Collection<FileUpload> collectionFiles = (Collection<FileUpload>) collection;
                 event.replyFiles(collectionFiles).setEphemeral(ephemeral).queue();
             }
-            case MessagePollData poll -> event.replyPoll(poll).setEphemeral(true).queue();
+
+            case LayoutComponent component -> event.replyComponents(component).setEphemeral(ephemeral).queue();
+            case Collection<?> collection when collection.stream().findFirst().get() instanceof LayoutComponent -> {
+                Collection<LayoutComponent> collectionComponents = (Collection<LayoutComponent>) collection;
+                event.replyComponents(collectionComponents).setEphemeral(ephemeral).queue();
+            }
             case null, default -> throw new RuntimeException("Type not supported");
         }
     }

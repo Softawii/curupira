@@ -8,26 +8,36 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.AutoCompleteQuery;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.utils.messages.MessagePollData;
 
 @DiscordController(value = "bar", description = "foo foo foo", parent = "foo", permissions = {Permission.ADMINISTRATOR},
                     resource = "i18n", locales = {DiscordLocale.PORTUGUESE_BRAZILIAN})
 public class Foo {
 
-//    @DiscordCommand(name = "baz", description = "baz baz baz", ephemeral = true)
-//    public String baz(SlashCommandInteractionEvent event,
-//                    @RequestInfo Member member,
-//                    @DiscordParameter(name = "name", description = "Your name") String name,
-//                    @DiscordParameter(name = "age", description = "Your age") Integer age,
-//                    @DiscordParameter(name = "channel", description = "Select channel") MessageChannelUnion channel) {
-//        channel.sendMessage("test").queue();
-//
-//        return "Hello " + name + " you are " + age + " years old";
-//    }
+    @DiscordCommand(name = "baz", description = "baz baz baz", ephemeral = true)
+    public LayoutComponent baz(SlashCommandInteractionEvent event,
+                                   @RequestInfo Member member,
+                                   @DiscordParameter(name = "name", description = "Your name") String name,
+                                   @DiscordParameter(name = "age", description = "Your age") Integer age) {
+
+        StringSelectMenu build = StringSelectMenu.create("select-menu")
+                .addOption("foo", "foo")
+                .addOption("bar", "bar")
+                .addOption("baz", "baz")
+                .build();
+        return ActionRow.of(build);
+    }
 
     @DiscordCommand(name = "qux", description = "qux qux qux")
     public MessagePollData qux(JDA jda,
