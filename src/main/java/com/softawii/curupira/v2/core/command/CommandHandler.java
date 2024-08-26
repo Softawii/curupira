@@ -1,5 +1,6 @@
 package com.softawii.curupira.v2.core.command;
 
+import com.softawii.curupira.v2.annotations.DiscordChoice;
 import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.DiscordParameter;
@@ -11,8 +12,11 @@ import com.softawii.curupira.v2.parser.DiscordToJavaParser;
 import com.softawii.curupira.v2.parser.JavaToDiscordParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
+import net.dv8tion.jda.api.interactions.Interaction;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -35,7 +39,8 @@ class CommandHandler {
     private static final Logger logger = LoggerFactory.getLogger(CommandHandler.class);
     private final JDA jda;
     private final Object instance;
-    private final Method method;
+    private final Method command;
+    private Method autoComplete;
     // i18n
     private final LocalizationManager localization;
     private final DiscordEnvironment environment;
@@ -43,9 +48,9 @@ class CommandHandler {
     private List<OptionData> options;
     private boolean ephemeral;
 
-    public CommandHandler(JDA jda, Object instance, Method method, LocalizationFunction localization, DiscordLocale defaultLocale, DiscordEnvironment environment) {
+    public CommandHandler(JDA jda, Object instance, Method command, LocalizationFunction localization, DiscordLocale defaultLocale, DiscordEnvironment environment) {
         this.jda = jda;
-        this.method = method;
+        this.command = command;
         this.instance = instance;
         this.localization = new LocalizationManager(localization, defaultLocale);
         this.environment = environment;
@@ -54,7 +59,7 @@ class CommandHandler {
     }
 
     public Class<?> getControllerClass() {
-        return method.getDeclaringClass();
+        return command.getDeclaringClass();
     }
 
     public List<OptionData> getOptions() {
@@ -65,9 +70,16 @@ class CommandHandler {
         return localization;
     }
 
+    public void addAutoComplete(Method autoComplete) {
+        if(this.autoComplete != null) {
+            throw new RuntimeException("AutoComplete method already set");
+        }
+        this.autoComplete = autoComplete;
+    }
+
     public String getFullCommandName() {
-        DiscordController controllerInfo = method.getDeclaringClass().getAnnotation(DiscordController.class);
-        DiscordCommand commandInfo = method.getAnnotation(DiscordCommand.class);
+        DiscordController controllerInfo = command.getDeclaringClass().getAnnotation(DiscordController.class);
+        DiscordCommand commandInfo = command.getAnnotation(DiscordCommand.class);
 
         if(controllerInfo.hidden()) {
             return commandInfo.name();
@@ -79,10 +91,10 @@ class CommandHandler {
     }
 
     private void register() {
-        DiscordCommand commandInfo = method.getAnnotation(DiscordCommand.class);
+        DiscordCommand commandInfo = command.getAnnotation(DiscordCommand.class);
 
         if(commandInfo == null) {
-            throw new RuntimeException("Method " + method.getName() + " is missing the DiscordCommand annotation.");
+            throw new RuntimeException("Method " + command.getName() + " is missing the DiscordCommand annotation.");
         }
 
         // Register the command to Discord
@@ -99,7 +111,7 @@ class CommandHandler {
     private List<OptionData> mapOptions() {
         List<OptionData> options = new ArrayList<>();
 
-        for(Parameter parameter : method.getParameters()) {
+        for(Parameter parameter : command.getParameters()) {
             DiscordParameter annotation = parameter.getAnnotation(DiscordParameter.class);
             if(annotation == null) {
                 continue;
@@ -111,6 +123,9 @@ class CommandHandler {
                 type = JavaToDiscordParser.getTypeFromClass(parameter.getType());
 
             OptionData option = new OptionData(type, annotation.name(), annotation.description(), annotation.required(), annotation.autoComplete());
+            if(annotation.choices().length > 0) {
+                option.addChoices(mapChoices(annotation.choices(), type));
+            }
             options.add(option);
 
             logger.info("Found parameter: name: {}, type: {}, required: {}, autocomplete: {}", annotation.name(), type, annotation.required(), annotation.autoComplete());
@@ -119,10 +134,31 @@ class CommandHandler {
         return options;
     }
 
-    private Object[] getParameters(CommandInteractionPayload event) {
+    private List<Command.Choice> mapChoices(DiscordChoice[] choices, OptionType type) {
+        // Long, Double, String
+        ArrayList<Command.Choice> result = new ArrayList<>();
+        for(DiscordChoice choice : choices) {
+            String key = choice.name();
+            String value = choice.value().isBlank() ? key : choice.name();
+
+            if(type == OptionType.STRING) {
+                result.add(new Command.Choice(key, value));
+            } else if(type == OptionType.INTEGER) {
+                result.add(new Command.Choice(key, Integer.parseInt(value)));
+            } else if(type == OptionType.NUMBER) {
+                result.add(new Command.Choice(key, Double.parseDouble(value)));
+            } else {
+                throw new RuntimeException("OptionType not supported");
+            }
+        }
+
+        return result;
+    }
+
+    private Object[] getParameters(Interaction event, Method target) {
         List<Object> parameters = new ArrayList<>();
 
-        for(Parameter parameter : method.getParameters())
+        for(Parameter parameter : target.getParameters())
             parameters.add(DiscordToJavaParser.getParameterFromEvent(event, parameter, localization));
         return parameters.toArray();
     }
@@ -135,7 +171,7 @@ class CommandHandler {
             throw new MissingPermissionsException();
         }
 
-        Object result = method.invoke(instance, getParameters(event));
+        Object result = command.invoke(instance, getParameters(event, command));
         // something to reply
         if(result != null) {
             if(result instanceof TextLocaleResponse response) {
@@ -143,5 +179,14 @@ class CommandHandler {
             }
             JavaToDiscordParser.responseFromCommandEvent(event, result, ephemeral);
         }
+    }
+
+    public void autoComplete(CommandAutoCompleteInteractionEvent event) throws InvocationTargetException, IllegalAccessException {
+        if(autoComplete == null) {
+            throw new RuntimeException("AutoComplete method not set");
+        }
+
+        Command.Choice[] choices = (Command.Choice[]) autoComplete.invoke(instance, getParameters(event, autoComplete));
+        event.replyChoices(choices).queue();
     }
 }

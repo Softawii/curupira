@@ -75,7 +75,7 @@ public class CurupiraBoot extends ListenerAdapter {
 
     @Override
     public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
-        // TODO: implement
-        super.onCommandAutoCompleteInteraction(event);
+        this.logger.debug("Command autocomplete interaction received. Event: {}", event);
+        this.mapper.onAutoComplete(event);
     }
 }

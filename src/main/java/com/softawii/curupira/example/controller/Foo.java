@@ -8,7 +8,10 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.interactions.AutoCompleteQuery;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.messages.MessagePollData;
 
 @DiscordController(value = "bar", description = "foo foo foo", parent = "foo", permissions = {Permission.ADMINISTRATOR},
@@ -43,9 +46,25 @@ public class Foo {
     @DiscordCommand(name = "charlie", description = "charlie charlie charlie")
     public TextLocaleResponse charlie(
                     @RequestInfo Member member,
-                    @DiscordParameter(name = "poll", description = "pool name") String name) {
+                    @DiscordParameter(name = "name", description = "your name", choices = {
+                            @DiscordChoice(name = "foo"),
+                            @DiscordChoice(name = "bar"),
+                            @DiscordChoice(name = "baz")
+                    }) String name,
+                    @DiscordParameter(name= "profession", description = "your profession", autoComplete = true) String profession) {
 
-        throw new NullPointerException("test");
-        // return new TextLocaleResponse("foo.bar.charlie.response.ok", name);
+        return new TextLocaleResponse("foo.bar.charlie.response.ok", name);
+    }
+
+    @DiscordAutoComplete(name = "charlie")
+    public Command.Choice[] charlieAutoComplete(AutoCompleteQuery query) {
+        if(query.getName().equals("profession")) {
+            return new Command.Choice[] {
+                    new Command.Choice("developer", "developer"),
+                    new Command.Choice("designer", "designer"),
+                    new Command.Choice("tester", "tester")
+            };
+        }
+        return new Command.Choice[0];
     }
 }

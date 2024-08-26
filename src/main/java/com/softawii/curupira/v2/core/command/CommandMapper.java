@@ -1,5 +1,6 @@
 package com.softawii.curupira.v2.core.command;
 
+import com.softawii.curupira.v2.annotations.DiscordAutoComplete;
 import com.softawii.curupira.v2.annotations.DiscordCommand;
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.core.exception.ExceptionMapper;
@@ -7,9 +8,11 @@ import com.softawii.curupira.v2.enums.DiscordEnvironment;
 import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
@@ -94,6 +97,11 @@ public class CommandMapper {
     }
 
     private void scanClass(Class clazz) {
+        findCommands(clazz);
+        findAutoComplete(clazz);
+    }
+
+    private void findCommands(Class clazz) {
         List<Method> methods = ScanUtils.getMethodsAnnotatedWith(clazz, DiscordCommand.class);
         DiscordController controllerInfo = (DiscordController) clazz.getAnnotation(DiscordController.class);
         LocalizationFunction localization = getLocalizationFunction(controllerInfo);
@@ -111,6 +119,34 @@ public class CommandMapper {
             this.logger.info("Found method: {}", method.getName());
             CommandHandler handler = scanMethod(method, localization, defaultLocale, controllerInfo.environment());
             registerCommand(handler, controllerInfo, method.getAnnotation(DiscordCommand.class), localization);
+        }
+    }
+
+    private void findAutoComplete(Class clazz) {
+        List<Method> methods = ScanUtils.getMethodsAnnotatedWith(clazz, DiscordAutoComplete.class);
+        DiscordController controllerInfo = (DiscordController) clazz.getAnnotation(DiscordController.class);
+
+        this.logger.info("findAutoComplete: Autocomplete to controller: {}", controllerInfo.value());
+
+        for(Method method : methods) {
+            this.logger.info("findAutoComplete: Found method: {}", method.getName());
+            // get key from method name
+            String key = getAutoCompleteKey(controllerInfo, method.getAnnotation(DiscordAutoComplete.class));
+            if(!this.commands.containsKey(key)) {
+                this.logger.error("findAutoComplete: Command not found: {}", key);
+                throw new RuntimeException("Command not found to set autocomplete: " + key);
+            }
+            this.commands.get(key).addAutoComplete(method);
+        }
+    }
+
+    private String getAutoCompleteKey(DiscordController controllerInfo, DiscordAutoComplete autoComplete) {
+        if(controllerInfo.hidden()) {
+            return autoComplete.name();
+        } else if(controllerInfo.parent().isBlank()) {
+            return controllerInfo.value() + " " + autoComplete.name();
+        } else {
+            return controllerInfo.parent() + " " + controllerInfo.value() + " " + autoComplete.name();
         }
     }
 
@@ -167,8 +203,22 @@ public class CommandMapper {
                 exceptionMapper.handle(handler.getControllerClass(), e, event, handler.getLocalization());
             }
         } else {
-            this.logger.error("Command not found: {}", event.getFullCommandName());
+            this.logger.error("onCommandInteractionReceived: Command not found: {}", event.getFullCommandName());
             event.reply("Command not found").setEphemeral(true).queue();
+        }
+    }
+
+    public void onAutoComplete(CommandAutoCompleteInteractionEvent event) {
+        if(commands.containsKey(event.getFullCommandName())) {
+            CommandHandler handler = commands.get(event.getFullCommandName());
+            try {
+                handler.autoComplete(event);
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                exceptionMapper.handle(handler.getControllerClass(), e, event, handler.getLocalization());
+            }
+        } else {
+            this.logger.error("onAutoComplete: Command not found: {}", event.getFullCommandName());
+            event.replyChoices(new Command.Choice[0]).queue();
         }
     }
 }

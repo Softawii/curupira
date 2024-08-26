@@ -25,14 +25,9 @@ public class Main {
         JDABuilder builder = JDABuilder.createDefault(token);
         JDA JDA = builder.build();
 
-        boolean reset = false;
+        boolean reset = true;
         CurupiraBoot curupira = new CurupiraBoot(JDA, context, reset, pkg);
 
         JDA.awaitReady();
-    }
-
-
-    public static void test(Long a, Long b, String c, Double d) {
-        logger.info("a={}, b={}, c={}, d={}", a, b, c, d);
     }
 }

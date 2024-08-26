@@ -47,25 +47,21 @@ public class JavaToDiscordParser {
 
     // TODO: V2.? I don't known how to refactor this method to avoid the if-else chain, maybe in the future I will find a way
     public static void responseFromCommandEvent(GenericCommandInteractionEvent event, Object result, boolean ephemeral) {
-        if(result instanceof String response) {
-            event.reply(response).setEphemeral(ephemeral).queue();
-        } else if(result instanceof MessageCreateData message) {
-            event.reply(message).setEphemeral(ephemeral).queue();
-        } else if(result instanceof Modal modal) {
-            event.replyModal(modal).queue();
-        } else if(result instanceof MessageEmbed embed) {
-            event.replyEmbeds(embed).setEphemeral(ephemeral).queue();
-        } else if(result instanceof Collection<?> collection && collection.stream().findFirst().get() instanceof MessageEmbed) {
-            Collection<MessageEmbed> collectionEmbed = (Collection<MessageEmbed>) collection;
-            event.replyEmbeds(collectionEmbed).setEphemeral(ephemeral).queue();
-        }
-        else if(result instanceof Collection<?> collection && collection.stream().findFirst().get() instanceof FileUpload) {
-             Collection<FileUpload> collectionFiles = (Collection<FileUpload>) collection;
-             event.replyFiles(collectionFiles).setEphemeral(ephemeral).queue();
-        } else if(result instanceof MessagePollData poll) {
-            event.replyPoll(poll).setEphemeral(true).queue();
-        } else {
-            throw new RuntimeException("Type not supported");
+        switch (result) {
+            case String response -> event.reply(response).setEphemeral(ephemeral).queue();
+            case MessageCreateData message -> event.reply(message).setEphemeral(ephemeral).queue();
+            case Modal modal -> event.replyModal(modal).queue();
+            case MessageEmbed embed -> event.replyEmbeds(embed).setEphemeral(ephemeral).queue();
+            case Collection<?> collection when collection.stream().findFirst().get() instanceof MessageEmbed -> {
+                Collection<MessageEmbed> collectionEmbed = (Collection<MessageEmbed>) collection;
+                event.replyEmbeds(collectionEmbed).setEphemeral(ephemeral).queue();
+            }
+            case Collection<?> collection when collection.stream().findFirst().get() instanceof FileUpload -> {
+                Collection<FileUpload> collectionFiles = (Collection<FileUpload>) collection;
+                event.replyFiles(collectionFiles).setEphemeral(ephemeral).queue();
+            }
+            case MessagePollData poll -> event.replyPoll(poll).setEphemeral(true).queue();
+            case null, default -> throw new RuntimeException("Type not supported");
         }
     }
 }

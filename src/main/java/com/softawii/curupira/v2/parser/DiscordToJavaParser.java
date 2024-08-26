@@ -11,10 +11,12 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.AutoCompleteQuery;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
@@ -35,6 +37,10 @@ public class DiscordToJavaParser {
         else if(parameter.getType().equals(DiscordLocale.class) && parameter.isAnnotationPresent(LocaleType.class)) {
             if(parameter.getAnnotation(LocaleType.class).value() == LocaleTypeEnum.GUILD) return event.getGuildLocale();
             else return event.getUserLocale();
+        }
+        else if(parameter.getType().equals(AutoCompleteQuery.class)) {
+            if(event instanceof CommandAutoCompleteInteractionEvent autoComplete) return autoComplete.getFocusedOption();
+            else return null;
         }
         else if(parameter.getType().equals(SlashCommandInteractionEvent.class)) {
             return event;
