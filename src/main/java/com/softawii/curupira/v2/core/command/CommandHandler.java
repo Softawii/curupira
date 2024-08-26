@@ -1,9 +1,6 @@
 package com.softawii.curupira.v2.core.command;
 
-import com.softawii.curupira.v2.annotations.DiscordChoice;
-import com.softawii.curupira.v2.annotations.DiscordCommand;
-import com.softawii.curupira.v2.annotations.DiscordController;
-import com.softawii.curupira.v2.annotations.DiscordParameter;
+import com.softawii.curupira.v2.annotations.*;
 import com.softawii.curupira.v2.api.TextLocaleResponse;
 import com.softawii.curupira.v2.core.exception.MissingPermissionsException;
 import com.softawii.curupira.v2.enums.DiscordEnvironment;
@@ -28,7 +25,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class CommandHandler {
     private static final ChannelType[] PRIVATE_CHANNELS = {
@@ -40,7 +39,7 @@ class CommandHandler {
     private final JDA jda;
     private final Object instance;
     private final Method command;
-    private Method autoComplete;
+    private Map<String, Method> autoComplete;
     // i18n
     private final LocalizationManager localization;
     private final DiscordEnvironment environment;
@@ -54,6 +53,7 @@ class CommandHandler {
         this.instance = instance;
         this.localization = new LocalizationManager(localization, defaultLocale);
         this.environment = environment;
+        this.autoComplete = new HashMap<>();
 
         register();
     }
@@ -70,11 +70,11 @@ class CommandHandler {
         return localization;
     }
 
-    public void addAutoComplete(Method autoComplete) {
-        if(this.autoComplete != null) {
+    public void addAutoComplete(Method autoComplete, DiscordAutoComplete autoCompleteInfo) {
+        if(this.autoComplete.containsKey(autoCompleteInfo.variable())) {
             throw new RuntimeException("AutoComplete method already set");
         }
-        this.autoComplete = autoComplete;
+        this.autoComplete.put(autoCompleteInfo.variable(), autoComplete);
     }
 
     public String getFullCommandName() {
@@ -182,11 +182,20 @@ class CommandHandler {
     }
 
     public void autoComplete(CommandAutoCompleteInteractionEvent event) throws InvocationTargetException, IllegalAccessException {
-        if(autoComplete == null) {
+        if(autoComplete.isEmpty()) {
             throw new RuntimeException("AutoComplete method not set");
         }
 
-        Command.Choice[] choices = (Command.Choice[]) autoComplete.invoke(instance, getParameters(event, autoComplete));
+        String variable = event.getFocusedOption().getName();
+
+        Method defaultHandler = autoComplete.getOrDefault("", null);
+        Method finalHandler = this.autoComplete.getOrDefault(variable, defaultHandler);
+
+        if(finalHandler == null) {
+            throw new RuntimeException("AutoComplete method not found");
+        }
+
+        Command.Choice[] choices = (Command.Choice[]) finalHandler.invoke(instance, getParameters(event, finalHandler));
         event.replyChoices(choices).queue();
     }
 }

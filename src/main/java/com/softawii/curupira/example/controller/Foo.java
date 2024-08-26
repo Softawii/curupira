@@ -61,14 +61,15 @@ public class Foo {
                             @DiscordChoice(name = "bar"),
                             @DiscordChoice(name = "baz")
                     }) String name,
-                    @DiscordParameter(name= "profession", description = "your profession", autoComplete = true) String profession) {
+                    @DiscordParameter(name = "occupation", description = "your occupation", autoComplete = true) String occupation,
+                    @DiscordParameter(name = "food", description = "your favorite food", autoComplete = true) String food) {
 
         return new TextLocaleResponse("foo.bar.charlie.response.ok", name);
     }
 
     @DiscordAutoComplete(name = "charlie")
     public Command.Choice[] charlieAutoComplete(AutoCompleteQuery query) {
-        if(query.getName().equals("profession")) {
+        if(query.getName().equals("occupation")) {
             return new Command.Choice[] {
                     new Command.Choice("developer", "developer"),
                     new Command.Choice("designer", "designer"),
@@ -76,5 +77,14 @@ public class Foo {
             };
         }
         return new Command.Choice[0];
+    }
+
+    @DiscordAutoComplete(name = "charlie", variable = "food")
+    public Command.Choice[] charlieAutoCompleteFood(AutoCompleteQuery query) {
+        return new Command.Choice[]{
+                new Command.Choice("pizza", "pizza"),
+                new Command.Choice("hamburger", "hamburger"),
+                new Command.Choice("hotdog", "hotdog")
+        };
     }
 }

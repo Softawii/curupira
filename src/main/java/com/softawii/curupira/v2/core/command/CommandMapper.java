@@ -131,12 +131,14 @@ public class CommandMapper {
         for(Method method : methods) {
             this.logger.info("findAutoComplete: Found method: {}", method.getName());
             // get key from method name
-            String key = getAutoCompleteKey(controllerInfo, method.getAnnotation(DiscordAutoComplete.class));
+            DiscordAutoComplete autoComplete = method.getAnnotation(DiscordAutoComplete.class);
+            String key = getAutoCompleteKey(controllerInfo, autoComplete);
             if(!this.commands.containsKey(key)) {
                 this.logger.error("findAutoComplete: Command not found: {}", key);
                 throw new RuntimeException("Command not found to set autocomplete: " + key);
             }
-            this.commands.get(key).addAutoComplete(method);
+            this.logger.info("findAutoComplete: Registering autocomplete to command: {}, variable: {}", key, autoComplete.variable());
+            this.commands.get(key).addAutoComplete(method, autoComplete);
         }
     }
 
