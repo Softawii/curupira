@@ -3,6 +3,7 @@ package com.softawii.curupira.v2.parser;
 import com.softawii.curupira.v2.annotations.commands.DiscordParameter;
 import com.softawii.curupira.v2.annotations.LocaleType;
 import com.softawii.curupira.v2.annotations.RequestInfo;
+import com.softawii.curupira.v2.annotations.interactions.DiscordField;
 import com.softawii.curupira.v2.enums.LocaleTypeEnum;
 import com.softawii.curupira.v2.localization.LocalizationManager;
 import net.dv8tion.jda.api.JDA;
@@ -23,6 +24,7 @@ import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 
 import java.lang.reflect.Parameter;
 
@@ -73,6 +75,9 @@ public class DiscordToJavaParser {
         else if(parameter.getType().equals(String.class) && event instanceof CommandInteractionPayload payload) {
             return getString(payload, parameter);
         }
+        else if(parameter.getType().equals(String.class) && event instanceof ModalInteractionEvent payload) {
+            return getString(payload, parameter);
+        }
         else if(parameter.getType().equals(Double.class) && event instanceof CommandInteractionPayload payload) {
             return getDouble(payload, parameter);
         }
@@ -96,6 +101,18 @@ public class DiscordToJavaParser {
         }
         else if(MessageChannelUnion.class.isAssignableFrom(parameter.getType()) && event instanceof CommandInteractionPayload payload) {
             return getChannel(payload, parameter);
+        }
+        else {
+            return null;
+        }
+    }
+
+    private static Object getString(ModalInteractionEvent payload, Parameter parameter) {
+        DiscordField annotation = parameter.getAnnotation(DiscordField.class);
+        if(annotation != null) {
+            ModalMapping value = payload.getValue(annotation.value());
+            if(value != null) return value.getAsString();
+            else return null;
         }
         else {
             return null;

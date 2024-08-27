@@ -5,12 +5,15 @@ import com.softawii.curupira.v2.annotations.commands.DiscordAutoComplete;
 import com.softawii.curupira.v2.annotations.commands.DiscordChoice;
 import com.softawii.curupira.v2.annotations.commands.DiscordCommand;
 import com.softawii.curupira.v2.annotations.commands.DiscordParameter;
+import com.softawii.curupira.v2.annotations.interactions.DiscordField;
 import com.softawii.curupira.v2.annotations.interactions.DiscordMenu;
+import com.softawii.curupira.v2.annotations.interactions.DiscordModal;
 import com.softawii.curupira.v2.api.TextLocaleResponse;
 import com.softawii.curupira.v2.localization.LocalizationManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.AutoCompleteQuery;
@@ -64,6 +67,13 @@ public class Foo {
                         ActionRow.of(TextInput.create("text-input", "Text Input", TextInputStyle.SHORT).build()),
                         ActionRow.of(TextInput.create("text-input-2", "Text Input 2", TextInputStyle.PARAGRAPH).build())
                 ).build();
+    }
+
+    @DiscordModal(name = "modal-test")
+    public String modalTest(ModalInteractionEvent event,
+                            @DiscordField("text-input") String textInput,
+                            @DiscordField("text-input-2") String textInput2) {
+        return "You typed: " + textInput + " and " + textInput2;
     }
 
     @DiscordCommand(name = "charlie", description = "charlie charlie charlie")
