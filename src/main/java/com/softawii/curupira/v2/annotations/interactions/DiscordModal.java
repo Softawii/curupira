@@ -9,4 +9,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DiscordModal {
     String name();
+    boolean ephemeral() default false;
 }

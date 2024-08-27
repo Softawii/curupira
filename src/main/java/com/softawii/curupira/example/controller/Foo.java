@@ -51,7 +51,7 @@ public class Foo {
         event.reply("You selected: " + selections).setEphemeral(true).queue();
     }
 
-    @DiscordCommand(name = "qux", description = "qux qux qux")
+    @DiscordCommand(name = "qux", description = "qux qux qux", ephemeral = true)
     public Modal qux(JDA jda,
                                LocalizationManager localization,
                                @RequestInfo Member member,
@@ -69,7 +69,7 @@ public class Foo {
                 ).build();
     }
 
-    @DiscordModal(name = "modal-test")
+    @DiscordModal(name = "modal-test", ephemeral = true)
     public String modalTest(ModalInteractionEvent event,
                             @DiscordField("text-input") String textInput,
                             @DiscordField("text-input-2") String textInput2) {

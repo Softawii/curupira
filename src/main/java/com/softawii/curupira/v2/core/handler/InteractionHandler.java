@@ -1,6 +1,9 @@
 package com.softawii.curupira.v2.core.handler;
 
 import com.softawii.curupira.v2.annotations.*;
+import com.softawii.curupira.v2.annotations.interactions.DiscordButton;
+import com.softawii.curupira.v2.annotations.interactions.DiscordMenu;
+import com.softawii.curupira.v2.annotations.interactions.DiscordModal;
 import com.softawii.curupira.v2.api.TextLocaleResponse;
 import com.softawii.curupira.v2.api.exception.MissingPermissionsException;
 import com.softawii.curupira.v2.enums.DiscordEnvironment;
@@ -52,6 +55,8 @@ public class InteractionHandler {
         this.localization = new LocalizationManager(localization, defaultLocale);
         this.environment = environment;
         this.id = id;
+
+        register();
     }
 
     public Class<?> getControllerClass() {
@@ -67,8 +72,10 @@ public class InteractionHandler {
     }
 
     private void register() {
-        // getting the options
-        // TODO: this.ephemeral = commandInfo.ephemeral();
+        // getting ephemeral status
+        this.ephemeral = interaction.isAnnotationPresent(DiscordMenu.class) && interaction.getAnnotation(DiscordMenu.class).ephemeral() ||
+                interaction.isAnnotationPresent(DiscordModal.class) && interaction.getAnnotation(DiscordModal.class).ephemeral() ||
+                interaction.isAnnotationPresent(DiscordButton.class) && interaction.getAnnotation(DiscordButton.class).ephemeral();
     }
 
     private Object[] getParameters(Interaction event, Method target) {
