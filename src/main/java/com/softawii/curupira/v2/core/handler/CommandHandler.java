@@ -1,8 +1,12 @@
-package com.softawii.curupira.v2.core.command;
+package com.softawii.curupira.v2.core.handler;
 
 import com.softawii.curupira.v2.annotations.*;
+import com.softawii.curupira.v2.annotations.commands.DiscordAutoComplete;
+import com.softawii.curupira.v2.annotations.commands.DiscordChoice;
+import com.softawii.curupira.v2.annotations.commands.DiscordCommand;
+import com.softawii.curupira.v2.annotations.commands.DiscordParameter;
 import com.softawii.curupira.v2.api.TextLocaleResponse;
-import com.softawii.curupira.v2.core.exception.MissingPermissionsException;
+import com.softawii.curupira.v2.api.exception.MissingPermissionsException;
 import com.softawii.curupira.v2.enums.DiscordEnvironment;
 import com.softawii.curupira.v2.localization.LocalizationManager;
 import com.softawii.curupira.v2.parser.DiscordToJavaParser;
@@ -14,7 +18,6 @@ import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionE
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.commands.Command;
-import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
@@ -29,7 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class CommandHandler {
+public class CommandHandler {
     private static final ChannelType[] PRIVATE_CHANNELS = {
             ChannelType.PRIVATE,
             ChannelType.GROUP

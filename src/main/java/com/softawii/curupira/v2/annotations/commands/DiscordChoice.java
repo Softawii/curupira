@@ -1,4 +1,4 @@
-package com.softawii.curupira.v2.annotations;
+package com.softawii.curupira.v2.annotations.commands;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

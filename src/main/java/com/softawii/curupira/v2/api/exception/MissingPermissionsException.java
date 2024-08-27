@@ -1,4 +1,4 @@
-package com.softawii.curupira.v2.core.exception;
+package com.softawii.curupira.v2.api.exception;
 
 public class MissingPermissionsException extends RuntimeException {
 }

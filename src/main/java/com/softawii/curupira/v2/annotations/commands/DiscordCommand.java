@@ -1,7 +1,5 @@
-package com.softawii.curupira.v2.annotations;
+package com.softawii.curupira.v2.annotations.commands;
 
-import com.softawii.curupira.v2.enums.DiscordEnvironment;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.Command;
 
 import java.lang.annotation.ElementType;

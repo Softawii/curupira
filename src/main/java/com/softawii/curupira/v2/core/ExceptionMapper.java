@@ -1,9 +1,8 @@
-package com.softawii.curupira.v2.core.exception;
+package com.softawii.curupira.v2.core;
 
 
-import com.softawii.curupira.v2.annotations.DiscordController;
-import com.softawii.curupira.v2.annotations.DiscordException;
 import com.softawii.curupira.v2.annotations.DiscordExceptions;
+import com.softawii.curupira.v2.core.handler.ExceptionHandler;
 import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.localization.LocalizationManager;
 import com.softawii.curupira.v2.utils.ScanUtils;
@@ -11,8 +10,6 @@ import net.dv8tion.jda.api.interactions.Interaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

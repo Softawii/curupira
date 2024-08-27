@@ -1,10 +1,7 @@
 package com.softawii.curupira.v2.core;
 
-import com.softawii.curupira.v2.core.command.CommandMapper;
-import com.softawii.curupira.v2.core.exception.ExceptionMapper;
 import com.softawii.curupira.v2.integration.ContextProvider;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.*;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -22,7 +19,7 @@ public class CurupiraBoot extends ListenerAdapter {
     private final JDA jda;
 
     private final ExceptionMapper exceptionMapper;
-    private final CommandMapper mapper;
+    private final InteractionMapper mapper;
 
     public CurupiraBoot(@NotNull JDA jda, @NotNull ContextProvider context, boolean registerCommandsToDiscord, String ... packages) {
         this.logger = LoggerFactory.getLogger(CurupiraBoot.class);
@@ -37,7 +34,7 @@ public class CurupiraBoot extends ListenerAdapter {
         }
 
         this.exceptionMapper = new ExceptionMapper(context, packages);
-        this.mapper = new CommandMapper(jda, context, exceptionMapper, registerCommandsToDiscord, packages);
+        this.mapper = new InteractionMapper(jda, context, exceptionMapper, registerCommandsToDiscord, packages);
 
         this.jda.addEventListener(this);
         this.logger.info("Curupira is ready!");
@@ -51,26 +48,26 @@ public class CurupiraBoot extends ListenerAdapter {
 
     @Override
     public void onModalInteraction(@NotNull ModalInteractionEvent event) {
-        // TODO: implement
-        super.onModalInteraction(event);
+        this.logger.debug("Modal interaction received. Event: {}", event);
+        this.mapper.onGenericInteractionCreateEvent(event.getModalId(), event);
     }
 
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
-        // TODO: implement
-        super.onButtonInteraction(event);
+        this.logger.debug("Button interaction received. Event: {}", event);
+        this.mapper.onGenericInteractionCreateEvent(event.getComponentId(), event);
     }
 
     @Override
     public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
-        // TODO: implement
-        super.onStringSelectInteraction(event);
+        this.logger.debug("String select interaction received. Event: {}", event);
+        this.mapper.onGenericInteractionCreateEvent(event.getComponentId(), event);
     }
 
     @Override
     public void onEntitySelectInteraction(@NotNull EntitySelectInteractionEvent event) {
-        // TODO: implement
-        super.onEntitySelectInteraction(event);
+        this.logger.debug("Entity select interaction received. Event: {}", event);
+        this.mapper.onGenericInteractionCreateEvent(event.getComponentId(), event);
     }
 
     @Override

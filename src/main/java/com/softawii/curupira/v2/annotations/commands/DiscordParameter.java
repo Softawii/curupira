@@ -1,4 +1,4 @@
-package com.softawii.curupira.v2.annotations;
+package com.softawii.curupira.v2.annotations.commands;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 

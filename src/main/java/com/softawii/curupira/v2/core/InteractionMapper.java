@@ -1,19 +1,24 @@
-package com.softawii.curupira.v2.core.command;
+package com.softawii.curupira.v2.core;
 
-import com.softawii.curupira.v2.annotations.DiscordAutoComplete;
-import com.softawii.curupira.v2.annotations.DiscordCommand;
-import com.softawii.curupira.v2.annotations.DiscordController;
-import com.softawii.curupira.v2.core.exception.ExceptionMapper;
+import com.softawii.curupira.v2.annotations.*;
+import com.softawii.curupira.v2.annotations.commands.DiscordAutoComplete;
+import com.softawii.curupira.v2.annotations.commands.DiscordCommand;
+import com.softawii.curupira.v2.annotations.interactions.DiscordButton;
+import com.softawii.curupira.v2.annotations.interactions.DiscordMenu;
+import com.softawii.curupira.v2.annotations.interactions.DiscordModal;
+import com.softawii.curupira.v2.core.handler.CommandHandler;
+import com.softawii.curupira.v2.core.handler.InteractionHandler;
 import com.softawii.curupira.v2.enums.DiscordEnvironment;
 import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.Command;
-import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
@@ -26,8 +31,9 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Stream;
 
-public class CommandMapper {
+public class InteractionMapper {
 
     private final Logger logger;
     private final JDA jda;
@@ -37,18 +43,20 @@ public class CommandMapper {
 
     private final ExceptionMapper exceptionMapper;
     private final Map<String, CommandHandler> commands;
+    private final Map<String, InteractionHandler> interactions;
     private final Map<String, CommandDataImpl> data;
 
-    public CommandMapper(JDA jda, ContextProvider context, ExceptionMapper exceptionMapper, boolean registerCommandsToDiscord, String ... packages) {
-        this.logger = LoggerFactory.getLogger(CommandMapper.class);
+    public InteractionMapper(JDA jda, ContextProvider context, ExceptionMapper exceptionMapper, boolean registerCommandsToDiscord, String ... packages) {
+        this.logger = LoggerFactory.getLogger(InteractionMapper.class);
         this.jda = jda;
         this.context = context;
         this.registerCommandsToDiscord = registerCommandsToDiscord;
         this.packages = packages;
         this.exceptionMapper = exceptionMapper;
 
-        this.commands = new HashMap<>();
-        this.data = new HashMap<>();
+        this.commands = new HashMap<>();     // Internal integration (Commands and Autocomplete)
+        this.data = new HashMap<>();         // Discord mapping      (Register Objects)
+        this.interactions = new HashMap<>(); // Internal integration (Menus, Modals, Buttons)
 
         scan();
         apply();
@@ -99,6 +107,7 @@ public class CommandMapper {
     private void scanClass(Class clazz) {
         findCommands(clazz);
         findAutoComplete(clazz);
+        findMenuModalAndButton(clazz);
     }
 
     private void findCommands(Class clazz) {
@@ -117,7 +126,7 @@ public class CommandMapper {
 
         for(Method method : methods) {
             this.logger.info("Found method: {}", method.getName());
-            CommandHandler handler = scanMethod(method, localization, defaultLocale, controllerInfo.environment());
+            CommandHandler handler = scanCommand(method, localization, defaultLocale, controllerInfo.environment());
             registerCommand(handler, controllerInfo, method.getAnnotation(DiscordCommand.class), localization);
         }
     }
@@ -142,6 +151,43 @@ public class CommandMapper {
         }
     }
 
+    private void findMenuModalAndButton(Class clazz) {
+        List<Method> menus = ScanUtils.getMethodsAnnotatedWith(clazz, DiscordMenu.class);
+        List<Method> modals = ScanUtils.getMethodsAnnotatedWith(clazz, DiscordModal.class);
+        List<Method> buttons = ScanUtils.getMethodsAnnotatedWith(clazz, DiscordButton.class);
+        List<Method> methods = Stream.of(menus, modals, buttons).flatMap(Collection::stream).toList();
+
+        DiscordController controllerInfo = (DiscordController) clazz.getAnnotation(DiscordController.class);
+        LocalizationFunction localization = getLocalizationFunction(controllerInfo);
+        DiscordLocale defaultLocale = controllerInfo.defaultLocale();
+
+        this.logger.info("findMenuModalAndButton: Component to controller: {}", controllerInfo.value());
+
+        for(Method method : methods) {
+            this.logger.info("findMenuModalAndButton: Found method: {}", method.getName());
+            // get key from method name
+            DiscordMenu menu = method.getAnnotation(DiscordMenu.class);
+            DiscordButton button = method.getAnnotation(DiscordButton.class);
+            DiscordModal modal = method.getAnnotation(DiscordModal.class);
+            String key = getKey(menu, button, modal);
+
+            if(this.interactions.containsKey(key)) {
+                this.logger.error("findMenuModalAndButton: Component already registered: {}", key);
+                throw new RuntimeException("Component already registered: " + key);
+            }
+
+            InteractionHandler handler = scanInteraction(method, localization, defaultLocale, controllerInfo.environment(), key);
+            this.interactions.put(key, handler);
+        }
+    }
+
+    private String getKey(DiscordMenu menu, DiscordButton button, DiscordModal modal) {
+        if(menu != null) return menu.name();
+        if(button != null) return button.name();
+        if(modal != null) return modal.name();
+        throw new RuntimeException("Component not found");
+    }
+
     private String getAutoCompleteKey(DiscordController controllerInfo, DiscordAutoComplete autoComplete) {
         if(controllerInfo.hidden()) {
             return autoComplete.name();
@@ -152,8 +198,12 @@ public class CommandMapper {
         }
     }
 
-    private CommandHandler scanMethod(Method method, LocalizationFunction localization, DiscordLocale defaultLocale, DiscordEnvironment environment) {
+    private CommandHandler scanCommand(Method method, LocalizationFunction localization, DiscordLocale defaultLocale, DiscordEnvironment environment) {
         return new CommandHandler(jda, context.getInstance(method.getDeclaringClass()), method, localization, defaultLocale, environment);
+    }
+
+    private InteractionHandler scanInteraction(Method method, LocalizationFunction localization, DiscordLocale defaultLocale, DiscordEnvironment environment, String id) {
+        return new InteractionHandler(jda, context.getInstance(method.getDeclaringClass()), method, localization, defaultLocale, environment, id);
     }
 
     private void registerCommand(CommandHandler handler, DiscordController controllerInfo, DiscordCommand commandInfo, LocalizationFunction localization) {
@@ -201,7 +251,7 @@ public class CommandMapper {
             CommandHandler handler = commands.get(event.getFullCommandName());
             try {
                 handler.execute(event);
-            } catch (InvocationTargetException | IllegalAccessException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 exceptionMapper.handle(handler.getControllerClass(), e, event, handler.getLocalization());
             }
         } else {
@@ -215,12 +265,33 @@ public class CommandMapper {
             CommandHandler handler = commands.get(event.getFullCommandName());
             try {
                 handler.autoComplete(event);
-            } catch (InvocationTargetException | IllegalAccessException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 exceptionMapper.handle(handler.getControllerClass(), e, event, handler.getLocalization());
             }
         } else {
             this.logger.error("onAutoComplete: Command not found: {}", event.getFullCommandName());
             event.replyChoices(new Command.Choice[0]).queue();
+        }
+    }
+
+    public void onGenericInteractionCreateEvent(String id, GenericInteractionCreateEvent event) {
+        this.logger.info("onGenericInteractionCreateEvent: id={}, event={}", id, event);
+        id = id.split(":")[0];
+
+        if(this.interactions.containsKey(id)) {
+            InteractionHandler handler = interactions.get(id);
+            try {
+                handler.execute(event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                exceptionMapper.handle(handler.getControllerClass(), e, event, handler.getLocalization());
+            }
+        } else {
+            this.logger.error("onGenericInteractionCreateEvent: Command not found: {}", id);
+            if(event instanceof GenericComponentInteractionCreateEvent interaction) {
+                interaction.reply("Command not found").setEphemeral(true).queue();
+            } else if(event instanceof ModalInteractionEvent interaction) {
+                interaction.reply("Command not found").setEphemeral(true).queue();
+            }
         }
     }
 }

@@ -1,10 +1,9 @@
-package com.softawii.curupira.v2.core.exception;
+package com.softawii.curupira.v2.core.handler;
 
 import com.softawii.curupira.v2.annotations.DiscordException;
 import com.softawii.curupira.v2.localization.LocalizationManager;
 import com.softawii.curupira.v2.parser.DiscordToJavaParser;
 import net.dv8tion.jda.api.interactions.Interaction;
-import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,11 +72,16 @@ public class ExceptionHandler {
         return handler;
     }
 
-    private Object[] getParameters(Method method, Interaction event, LocalizationManager localization) {
+    private Object[] getParameters(Method method, Interaction event, LocalizationManager localization, Throwable exception) {
         List<Object> parameters = new ArrayList<>();
 
-        for(Parameter parameter : method.getParameters())
-            parameters.add(DiscordToJavaParser.getParameterFromEvent(event, parameter, localization));
+        for(Parameter parameter : method.getParameters()) {
+            if (parameter.getType().isNestmateOf(Throwable.class)) {
+                parameters.add(exception);
+            } else {
+                parameters.add(DiscordToJavaParser.getParameterFromEvent(event, parameter, localization));
+            }
+        }
         return parameters.toArray();
     }
 
@@ -90,7 +94,7 @@ public class ExceptionHandler {
 
         if(handler != null) {
             try {
-                handler.invoke(instance, getParameters(handler, interaction, localization));
+                handler.invoke(instance, getParameters(handler, interaction, localization, exception));
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException("Failed to invoke handler method: " + handler.getName(), e);
             }

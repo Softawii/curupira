@@ -8,7 +8,11 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.interactions.commands.CommandInteraction;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.components.ComponentInteraction;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -47,11 +51,11 @@ public class JavaToDiscordParser {
     }
 
     // TODO: V2.? I don't known how to refactor this method to avoid the if-else chain, maybe in the future I will find a way
-    public static void responseFromCommandEvent(GenericCommandInteractionEvent event, Object result, boolean ephemeral) {
+    public static void responseFromCommandEvent(IReplyCallback event, Object result, boolean ephemeral) {
         switch (result) {
             case String response -> event.reply(response).setEphemeral(ephemeral).queue();
             case MessageCreateData message -> event.reply(message).setEphemeral(ephemeral).queue();
-            case Modal modal -> event.replyModal(modal).queue();
+            case Modal modal when event instanceof IModalCallback modalCallback -> modalCallback.replyModal(modal).queue();
             case MessagePollData poll -> event.replyPoll(poll).setEphemeral(ephemeral).queue();
 
             case MessageEmbed embed -> event.replyEmbeds(embed).setEphemeral(ephemeral).queue();

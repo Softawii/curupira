@@ -1,6 +1,6 @@
 package com.softawii.curupira.v2.parser;
 
-import com.softawii.curupira.v2.annotations.DiscordParameter;
+import com.softawii.curupira.v2.annotations.commands.DiscordParameter;
 import com.softawii.curupira.v2.annotations.LocaleType;
 import com.softawii.curupira.v2.annotations.RequestInfo;
 import com.softawii.curupira.v2.enums.LocaleTypeEnum;
@@ -16,6 +16,8 @@ import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionE
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.AutoCompleteQuery;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.Interaction;
@@ -38,23 +40,31 @@ public class DiscordToJavaParser {
             if(parameter.getAnnotation(LocaleType.class).value() == LocaleTypeEnum.GUILD) return event.getGuildLocale();
             else return event.getUserLocale();
         }
-        else if(parameter.getType().equals(AutoCompleteQuery.class)) {
-            if(event instanceof CommandAutoCompleteInteractionEvent autoComplete) return autoComplete.getFocusedOption();
-            else return null;
+        else if(parameter.getType().equals(AutoCompleteQuery.class) && event instanceof CommandAutoCompleteInteractionEvent autoComplete) {
+            return autoComplete.getFocusedOption();
         }
-        else if(parameter.getType().equals(SlashCommandInteractionEvent.class)) {
+        // TODO: probably i can group all "return event" in one thing, but i don't want to do it now
+        // Commands
+        else if(parameter.getType().equals(SlashCommandInteractionEvent.class) && event instanceof SlashCommandInteractionEvent) {
             return event;
         }
-        else if(parameter.getType().equals(UserContextInteractionEvent.class)) {
+        else if(parameter.getType().equals(UserContextInteractionEvent.class) && event instanceof UserContextInteractionEvent) {
             return event;
         }
-        else if(parameter.getType().equals(MessageContextInteractionEvent.class)) {
+        else if(parameter.getType().equals(MessageContextInteractionEvent.class) && event instanceof MessageContextInteractionEvent) {
             return event;
         }
-        else if(parameter.getType().equals(ModalInteractionEvent.class)) {
+        // Other Interactions
+        else if(parameter.getType().equals(ModalInteractionEvent.class) && event instanceof ModalInteractionEvent) {
             return event;
         }
-        else if(parameter.getType().equals(ButtonInteractionEvent.class)) {
+        else if(parameter.getType().equals(ButtonInteractionEvent.class) && event instanceof ButtonInteractionEvent) {
+            return event;
+        }
+        else if(parameter.getType().equals(StringSelectInteractionEvent.class) && event instanceof StringSelectInteractionEvent) {
+            return event;
+        }
+        else if(parameter.getType().equals(EntitySelectInteractionEvent.class) && event instanceof EntitySelectInteractionEvent) {
             return event;
         }
         else if(parameter.getType().isAssignableFrom(Interaction.class)) {

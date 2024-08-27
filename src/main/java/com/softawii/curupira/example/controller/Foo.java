@@ -1,24 +1,27 @@
 package com.softawii.curupira.example.controller;
 
 import com.softawii.curupira.v2.annotations.*;
+import com.softawii.curupira.v2.annotations.commands.DiscordAutoComplete;
+import com.softawii.curupira.v2.annotations.commands.DiscordChoice;
+import com.softawii.curupira.v2.annotations.commands.DiscordCommand;
+import com.softawii.curupira.v2.annotations.commands.DiscordParameter;
+import com.softawii.curupira.v2.annotations.interactions.DiscordMenu;
 import com.softawii.curupira.v2.api.TextLocaleResponse;
 import com.softawii.curupira.v2.localization.LocalizationManager;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.AutoCompleteQuery;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.messages.MessagePollData;
 
 @DiscordController(value = "bar", description = "foo foo foo", parent = "foo", permissions = {Permission.ADMINISTRATOR},
@@ -39,8 +42,14 @@ public class Foo {
         return ActionRow.of(build);
     }
 
+    @DiscordMenu(name = "select-menu")
+    public void selectMenu(StringSelectInteractionEvent event) {
+        String selections = event.getSelectedOptions().stream().map(option -> option.getLabel()).reduce((a, b) -> a + ", " + b).orElse("none");
+        event.reply("You selected: " + selections).setEphemeral(true).queue();
+    }
+
     @DiscordCommand(name = "qux", description = "qux qux qux")
-    public MessagePollData qux(JDA jda,
+    public Modal qux(JDA jda,
                                LocalizationManager localization,
                                @RequestInfo Member member,
                                @LocaleType DiscordLocale locale,
@@ -50,7 +59,11 @@ public class Foo {
         String titleMessage = localization.getLocalizedString("foo.bar.qux.embed.title", locale, title, member.getNickname());
         String descriptionMessage = localization.getLocalizedString("foo.bar.qux.embed.description", locale, member.getEffectiveName(), jda.getSelfUser().getEffectiveName());
 
-        return MessagePollData.builder(titleMessage).addAnswer("yes").addAnswer("no").build();
+        return Modal.create("modal-test", "Modal Test")
+                .addComponents(
+                        ActionRow.of(TextInput.create("text-input", "Text Input", TextInputStyle.SHORT).build()),
+                        ActionRow.of(TextInput.create("text-input-2", "Text Input 2", TextInputStyle.PARAGRAPH).build())
+                ).build();
     }
 
     @DiscordCommand(name = "charlie", description = "charlie charlie charlie")
