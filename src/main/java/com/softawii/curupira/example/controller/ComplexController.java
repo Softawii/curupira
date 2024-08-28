@@ -66,6 +66,7 @@ public class ComplexController {
 
         if(reported == null) {
             event.reply("User not found").setEphemeral(true).queue();
+            return;
         }
 
         MessageEmbed embed = new EmbedBuilder().setTitle("Report").setColor(Color.RED)

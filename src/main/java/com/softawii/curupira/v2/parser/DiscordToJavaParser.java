@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -107,6 +108,15 @@ public class DiscordToJavaParser {
         }
         else if(MessageChannelUnion.class.isAssignableFrom(parameter.getType()) && event instanceof CommandInteractionPayload payload) {
             return getChannel(payload, parameter);
+        }
+        else if(GuildChannelUnion.class.isAssignableFrom(parameter.getType()) && event instanceof CommandInteractionPayload payload) {
+            return getChannel(payload, parameter);
+        }
+        else if(parameter.getType().equals(GuildChannelUnion.class)) {
+            return event.getChannel();
+        }
+        else if(parameter.getType().equals(MessageChannelUnion.class)) {
+            return event.getChannel();
         }
         else {
             return null;

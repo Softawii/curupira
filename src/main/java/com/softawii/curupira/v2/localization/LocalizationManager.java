@@ -25,7 +25,6 @@ public class LocalizationManager {
             mask = locales.get(defaultLocale);
         }
 
-        String result = MessageFormatter.arrayFormat(mask, args).getMessage();
-        return result;
+        return MessageFormat.format(mask, args);
     }
 }

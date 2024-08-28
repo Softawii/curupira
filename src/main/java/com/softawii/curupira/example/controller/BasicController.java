@@ -10,9 +10,10 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
-@DiscordController(value = "basic",description = "Basic Controller")
+@DiscordController(value = "basic", description = "Basic Controller")
 public class BasicController {
 
     @DiscordCommand(name = "hello", description = "Hello World", ephemeral = true)
@@ -35,7 +36,8 @@ public class BasicController {
     @DiscordCommand(name = "embed", description = "Embed")
     public String greetings(@RequestInfo Member member,
                             @DiscordParameter(name = "name", description = "Your name") String name,
-                            @DiscordParameter(name = "occupation", description = "Your occupation") String occupation) {
+                            @DiscordParameter(name = "occupation", description = "Your occupation") String occupation,
+                            @DiscordParameter(name = "channel", description = "Channel", required = false) GuildChannelUnion channel) {
         return "Hello, " + name + "! You are a " + occupation + "!";
     }
 
