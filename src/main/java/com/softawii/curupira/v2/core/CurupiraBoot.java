@@ -42,37 +42,37 @@ public class CurupiraBoot extends ListenerAdapter {
 
     @Override
     public void onGenericCommandInteraction(@NotNull GenericCommandInteractionEvent event) {
-        this.logger.debug("Command interaction received. Event: {}", event);
+        this.logger.info("Command interaction received. Event: {}", event);
         this.mapper.onCommandInteractionReceived(event);
     }
 
     @Override
     public void onModalInteraction(@NotNull ModalInteractionEvent event) {
-        this.logger.debug("Modal interaction received. Event: {}", event);
+        this.logger.info("Modal interaction received. Event: {}", event);
         this.mapper.onGenericInteractionCreateEvent(event.getModalId(), event);
     }
 
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
-        this.logger.debug("Button interaction received. Event: {}", event);
+        this.logger.info("Button interaction received. Event: {}", event);
         this.mapper.onGenericInteractionCreateEvent(event.getComponentId(), event);
     }
 
     @Override
     public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
-        this.logger.debug("String select interaction received. Event: {}", event);
+        this.logger.info("String select interaction received. Event: {}", event);
         this.mapper.onGenericInteractionCreateEvent(event.getComponentId(), event);
     }
 
     @Override
     public void onEntitySelectInteraction(@NotNull EntitySelectInteractionEvent event) {
-        this.logger.debug("Entity select interaction received. Event: {}", event);
+        this.logger.info("Entity select interaction received. Event: {}", event);
         this.mapper.onGenericInteractionCreateEvent(event.getComponentId(), event);
     }
 
     @Override
     public void onCommandAutoCompleteInteraction(@NotNull CommandAutoCompleteInteractionEvent event) {
-        this.logger.debug("Command autocomplete interaction received. Event: {}", event);
+        this.logger.info("Command autocomplete interaction received. Event: {}", event);
         this.mapper.onAutoComplete(event);
     }
 }

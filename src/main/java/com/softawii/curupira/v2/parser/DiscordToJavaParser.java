@@ -96,8 +96,14 @@ public class DiscordToJavaParser {
         else if(parameter.getType().equals(Member.class) && event instanceof CommandInteractionPayload payload) {
             return getMember(payload, parameter);
         }
-        else if(parameter.getType().equals(Guild.class) && event instanceof CommandInteractionPayload payload) {
-            return getGuild(payload, parameter);
+        else if(parameter.getType().equals(User.class)) {
+            return event.getUser();
+        }
+        else if(parameter.getType().equals(Member.class)) {
+            return event.getMember();
+        }
+        else if(parameter.getType().equals(Guild.class)) {
+            return event.getGuild();
         }
         else if(MessageChannelUnion.class.isAssignableFrom(parameter.getType()) && event instanceof CommandInteractionPayload payload) {
             return getChannel(payload, parameter);
@@ -205,10 +211,6 @@ public class DiscordToJavaParser {
             if(requestInfo != null) return event.getMember();
             else return null;
         }
-    }
-
-    private static Object getGuild(CommandInteractionPayload event, Parameter parameter) {
-        return event.getGuild();
     }
 
     private static Object getChannel(CommandInteractionPayload event, Parameter parameter) {
