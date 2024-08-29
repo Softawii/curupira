@@ -18,7 +18,7 @@ public class ScanUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanUtils.class);
 
-    public static Set<Class> getClassesInPackage(String pkg, Class annotation) {
+    public static Set<Class<?>> getClassesInPackage(String pkg, Class annotation) {
         LOGGER.info("Scanning package: {}, annotation: {}", pkg, annotation);
         Reflections reflections = new Reflections(
                 new ConfigurationBuilder()
@@ -26,7 +26,17 @@ public class ScanUtils {
                         .setScanners(Scanners.SubTypes, Scanners.TypesAnnotated)
                         .filterInputsBy((input) -> input.endsWith(".class") && input.startsWith(pkg.replace('.', '/')))
         );
-        return new HashSet<>(reflections.getTypesAnnotatedWith(annotation));
+        HashSet<Class<?>> set = new HashSet<Class<?>>(reflections.getTypesAnnotatedWith(annotation));
+
+        for(Class<?> clazz : set.stream().toList()) {
+            if(clazz.getPackage().getName().startsWith(pkg)) {
+                LOGGER.info("Found class: {}", clazz.getName());
+            } else {
+                set.remove(clazz);
+            }
+        }
+
+        return set;
     }
 
     public static List<Method> getMethodsAnnotatedWith(Class clazz, Class filtering) {

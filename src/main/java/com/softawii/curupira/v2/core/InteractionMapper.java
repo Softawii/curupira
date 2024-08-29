@@ -78,7 +78,7 @@ public class InteractionMapper {
     }
 
     private void scanPackage(String packageName) {
-        List<Class> classes = ScanUtils.getClassesInPackage(packageName, DiscordController.class).stream().toList();
+        List<Class<?>> classes = ScanUtils.getClassesInPackage(packageName, DiscordController.class).stream().toList();
 
         for(Class clazz : classes) {
             Object instance = context.getInstance(clazz);

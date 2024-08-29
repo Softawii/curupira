@@ -7,13 +7,17 @@ import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.localization.LocalizationManager;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.interactions.Interaction;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ExceptionMapper {
     private static final Logger logger = LoggerFactory.getLogger(ExceptionMapper.class);
@@ -31,12 +35,17 @@ public class ExceptionMapper {
         scanPackages(packages);
     }
 
+    private Set<Class> getClassesInPackage(String pkg, Class<? extends Annotation> annotation) {
+        Reflections reflections = new Reflections(pkg, new SubTypesScanner(false));
+        return new HashSet<>(reflections.getSubTypesOf(Object.class)).stream().filter(clazz -> clazz.getPackage().getName().startsWith(pkg) && clazz.isAnnotationPresent(annotation)).collect(Collectors.toSet());
+    }
+
     private void scanPackages(String ... packages) {
         // get all classes with DiscordExceptions annotation
         Set<Class> classes = new HashSet<>();
 
         for(String pkg : packages) {
-            classes.addAll(ScanUtils.getClassesInPackage(pkg, DiscordExceptions.class).stream().toList());
+            classes.addAll(getClassesInPackage(pkg, DiscordExceptions.class));
         }
 
         for(Class<?> clazz : classes) {
