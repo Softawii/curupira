@@ -18,12 +18,8 @@ public class ScanUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanUtils.class);
 
     public static Set<Class> getClassesInPackage(String pkgName) {
-        LOGGER.debug("Searching for classes in package '{}'", pkgName);
-        Reflections reflections = new Reflections(
-                new ConfigurationBuilder()
-                        .forPackages(pkgName)
-                        .addScanners(Scanners.SubTypes.filterResultsBy(s -> true))
-        );
+        LOGGER.info("Searching for classes in package '{}'", pkgName);
+        Reflections reflections = new Reflections(pkgName);
         return new HashSet<>(reflections.getSubTypesOf(Object.class));
     }
 
