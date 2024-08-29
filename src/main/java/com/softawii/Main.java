@@ -1,7 +1,7 @@
 package com.softawii;
 
-import com.softawii.curupira.example.controller.*;
-import com.softawii.curupira.example.exceptions.GenericExceptionHandler;
+import com.softawii.example.controller.*;
+import com.softawii.example.exceptions.GenericExceptionHandler;
 import com.softawii.curupira.v2.core.CurupiraBoot;
 import com.softawii.curupira.v2.integration.BasicContextProvider;
 import net.dv8tion.jda.api.JDA;
@@ -17,7 +17,7 @@ public class Main {
         BasicContextProvider context = new BasicContextProvider();
 
         String token = System.getenv("discord_token");
-        String pkg   = "com.softawii.curupira.example";
+        String pkg   = "com.softawii.example";
 
         context.registerInstance(GenericExceptionHandler.class, new GenericExceptionHandler());
         context.registerInstance(BasicController.class, new BasicController());

@@ -1,11 +1,9 @@
-package com.softawii.curupira.example.exceptions;
+package com.softawii.example.exceptions;
 
 import com.softawii.curupira.v2.annotations.DiscordException;
 import com.softawii.curupira.v2.annotations.DiscordExceptions;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.Interaction;
-import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

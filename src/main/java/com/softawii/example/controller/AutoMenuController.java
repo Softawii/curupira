@@ -1,4 +1,4 @@
-package com.softawii.curupira.example.controller;
+package com.softawii.example.controller;
 
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.commands.DiscordAutoComplete;

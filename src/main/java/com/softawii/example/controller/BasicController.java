@@ -1,4 +1,4 @@
-package com.softawii.curupira.example.controller;
+package com.softawii.example.controller;
 
 import com.softawii.curupira.v2.annotations.DiscordController;
 import com.softawii.curupira.v2.annotations.RequestInfo;
@@ -6,7 +6,6 @@ import com.softawii.curupira.v2.annotations.commands.DiscordCommand;
 import com.softawii.curupira.v2.annotations.commands.DiscordParameter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
