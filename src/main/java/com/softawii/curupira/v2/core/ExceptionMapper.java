@@ -12,6 +12,9 @@ import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,17 +38,12 @@ public class ExceptionMapper {
         scanPackages(packages);
     }
 
-    private Set<Class> getClassesInPackage(String pkg, Class<? extends Annotation> annotation) {
-        Reflections reflections = new Reflections(pkg, new SubTypesScanner(false));
-        return new HashSet<>(reflections.getSubTypesOf(Object.class)).stream().filter(clazz -> clazz.getPackage().getName().startsWith(pkg) && clazz.isAnnotationPresent(annotation)).collect(Collectors.toSet());
-    }
-
     private void scanPackages(String ... packages) {
         // get all classes with DiscordExceptions annotation
         Set<Class> classes = new HashSet<>();
 
         for(String pkg : packages) {
-            classes.addAll(getClassesInPackage(pkg, DiscordExceptions.class));
+            classes.addAll(ScanUtils.getClassesInPackage(pkg, DiscordExceptions.class));
         }
 
         for(Class<?> clazz : classes) {
