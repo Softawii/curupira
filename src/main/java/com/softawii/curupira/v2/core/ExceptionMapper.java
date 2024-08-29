@@ -36,7 +36,7 @@ public class ExceptionMapper {
         Set<Class> classes = new HashSet<>();
 
         for(String pkg : packages) {
-            classes.addAll(ScanUtils.getClassesInPackage(pkg).stream().filter(clazz -> clazz.isAnnotationPresent(DiscordExceptions.class)).toList());
+            classes.addAll(ScanUtils.getClassesInPackage(pkg, DiscordExceptions.class).stream().toList());
         }
 
         for(Class<?> clazz : classes) {

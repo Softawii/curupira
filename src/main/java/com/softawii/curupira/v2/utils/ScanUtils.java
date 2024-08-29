@@ -7,6 +7,7 @@ import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,10 +18,15 @@ public class ScanUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanUtils.class);
 
-    public static Set<Class> getClassesInPackage(String pkgName) {
-        LOGGER.info("Searching for classes in package '{}'", pkgName);
-        Reflections reflections = new Reflections(pkgName);
-        return new HashSet<>(reflections.getSubTypesOf(Object.class));
+    public static Set<Class> getClassesInPackage(String pkg, Class annotation) {
+        LOGGER.info("Scanning package: {}, annotation: {}", pkg, annotation);
+
+        Reflections reflections = new Reflections(new ConfigurationBuilder()
+                .forPackages(pkg)
+                .setScanners(Scanners.TypesAnnotated)
+                .filterInputsBy(input -> input.endsWith(".class")));
+
+        return new HashSet<>(reflections.getTypesAnnotatedWith(annotation));
     }
 
     public static List<Method> getMethodsAnnotatedWith(Class clazz, Class filtering) {
