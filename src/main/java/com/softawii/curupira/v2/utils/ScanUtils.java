@@ -20,12 +20,12 @@ public class ScanUtils {
 
     public static Set<Class> getClassesInPackage(String pkg, Class annotation) {
         LOGGER.info("Scanning package: {}, annotation: {}", pkg, annotation);
-
-        Reflections reflections = new Reflections(new ConfigurationBuilder()
-                .forPackages(pkg)
-                .setScanners(Scanners.TypesAnnotated)
-                .filterInputsBy(input -> input.endsWith(".class")));
-
+        Reflections reflections = new Reflections(
+                new ConfigurationBuilder()
+                        .forPackages(pkg)
+                        .setScanners(Scanners.SubTypes, Scanners.TypesAnnotated)
+                        .filterInputsBy((input) -> input.endsWith(".class") && input.startsWith(pkg.replace('.', '/')))
+        );
         return new HashSet<>(reflections.getTypesAnnotatedWith(annotation));
     }
 
