@@ -17,6 +17,7 @@ public @interface DiscordController {
     String parent() default "";
     String description() default "";
     boolean hidden() default false;
+    long guildId() default 0L;
     // Protection properties
     // TODO: V2.1 Owners Only
     Permission[] permissions() default {};
@@ -25,5 +26,4 @@ public @interface DiscordController {
     String resource() default "";
     DiscordLocale[] locales() default {};
     DiscordLocale defaultLocale() default DiscordLocale.ENGLISH_US;
-
 }
