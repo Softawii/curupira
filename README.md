@@ -217,12 +217,9 @@ In this example:
 - The SlashCommandInteractionEvent object gives you full control over the reply, allowing you to customize 
 how the bot responds to the user. You can set the reply as ephemeral, attach embeds, and more.
 
-You can specify parameters too.  
-Parameters for commands can be defined using the `@DiscordParameter` annotation.  
+You can specify parameters too. Parameters for commands can be defined using the `@DiscordParameter` annotation.  
 You need to specify a name and description.  
-Additionally, you can specify if the parameter is required and even provide autocomplete options 
-using the `choices` field or a fully-dedicated function by setting the `autoComplete` 
-field (which will be explained below).
+Additionally, you can specify if the parameter is required and even provide autocomplete options  using the `choices` field or a fully-dedicated function by setting the `autoComplete` field (which will be explained below).
 
 Here's a simple example:
 
@@ -487,6 +484,78 @@ The resource parameter specifies the resource file used for localization, and lo
 The userLocale parameter allows the command to adapt to the user's language preference when returning the localized message.
 
 For more information about ResourceBundle, you can refer to [Baeldung's ResourceBundle Guide](https://www.baeldung.com/java-resourcebundle) or [Official JDA Example](https://github.com/discord-jda/JDA/blob/master/src/examples/java/LocalizationExample.java).
+
+### Exceptions
+
+You can handle unexpected exceptions in your Discord bot using the `@DiscordExceptions` annotation. 
+This allows you to define a global exception handler for your commands.
+
+##### Generic Exception Handler
+
+Here’s an example of a generic exception handler that logs the error and sends a reply to the user:
+
+```java
+@DiscordExceptions
+public class GenericExceptionHandler {
+    
+    @DiscordException(Throwable.class)
+    public void onThrowable(Throwable throwable, Interaction interaction) {
+        if(interaction instanceof GenericCommandInteractionEvent event)  {
+            event.reply("An error occurred: " + throwable.getMessage()).setEphemeral(true).queue();
+        }
+    }
+}
+```
+
+In this example:
+
+- The onThrowable method is invoked for any Throwable that is thrown during command execution.
+
+##### Specific Exception Handling
+
+You can also create specific exception handlers for certain classes or packages:
+
+```java
+@Component
+@DiscordExceptions(classes = {VoiceAgentController.class, VoiceMasterController.class})
+public class VoiceExceptionController {
+
+    private final MainExceptionController mainExceptionController;
+
+    public VoiceExceptionController(MainExceptionController mainExceptionController) {
+        this.mainExceptionController = mainExceptionController;
+    }
+
+    @DiscordException(MissingPermissionsException.class)
+    public void missingPermissionsException(Throwable exception, Interaction interaction, LocalizationManager localizationManager, @LocaleType DiscordLocale locale) {
+        if(interaction instanceof IReplyCallback callback) {
+            callback.reply(localizationManager.getLocalizedString("voice.error.missing_permissions", locale)).setEphemeral(true).queue();
+        }
+    }
+
+    @DiscordException(CommandNotFoundException.class)
+    public void commandNotFoundException(Throwable exception, Interaction interaction, LocalizationManager localizationManager, @LocaleType DiscordLocale locale) {
+        if (interaction instanceof IReplyCallback callback) {
+            callback.reply(localizationManager.getLocalizedString("voice.error.command_not_found", locale)).setEphemeral(true).queue();
+        }
+    }
+
+    @DiscordException(Throwable.class)
+    public void throwable(Throwable throwable, Interaction interaction, LocalizationManager localization, @LocaleType DiscordLocale locale) {
+        if(interaction instanceof IReplyCallback callback) {
+            callback.reply(localization.getLocalizedString("voice.error.generic", locale)).setEphemeral(true).queue();
+        }
+
+        mainExceptionController.handle(throwable, interaction);
+    }
+}
+```
+
+In this example:
+
+- The `VoiceExceptionController` handles specific exceptions such as `MissingPermissionsException` and `CommandNotFoundException`.
+- Each method replies with a localized error message based on the user’s locale.
+- Throwable is redirected to mainExceptionController
 
 ### Logging Framework - SLF4J
 
