@@ -12,6 +12,7 @@ import com.softawii.curupira.v2.enums.DiscordEnvironment;
 import com.softawii.curupira.v2.integration.ContextProvider;
 import com.softawii.curupira.v2.utils.ScanUtils;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -20,6 +21,7 @@ import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteract
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
@@ -35,6 +37,8 @@ import java.util.stream.Stream;
 
 public class InteractionMapper {
 
+    private record CommandInfo(CommandDataImpl command, Long guildId) {}
+
     private final Logger logger;
     private final JDA jda;
     private final ContextProvider context;
@@ -44,7 +48,7 @@ public class InteractionMapper {
     private final ExceptionMapper exceptionMapper;
     private final Map<String, CommandHandler> commands;
     private final Map<String, InteractionHandler> interactions;
-    private final Map<String, CommandDataImpl> data;
+    private final Map<String, CommandInfo> data;
 
     public InteractionMapper(JDA jda, ContextProvider context, ExceptionMapper exceptionMapper, boolean registerCommandsToDiscord, String ... packages) {
         this.logger = LoggerFactory.getLogger(InteractionMapper.class);
@@ -64,9 +68,20 @@ public class InteractionMapper {
 
     private void apply() {
         if(registerCommandsToDiscord) {
-            for(Map.Entry<String, CommandDataImpl> entry : data.entrySet()) {
-                this.logger.info("Apply command: {}", entry.getValue());
-                jda.upsertCommand(entry.getValue()).queue();
+            for(Map.Entry<String, CommandInfo> entry : data.entrySet()) {
+                if(entry.getValue().guildId == 0L) {
+                    this.logger.info("Apply command: {}", entry.getValue().command);
+                    jda.upsertCommand(entry.getValue().command).queue();
+                } else {
+                    Guild guild = jda.getGuildById(entry.getValue().guildId);
+
+                    if(guild != null) {
+                        this.logger.info("Apply command: {}, Guild: {}", entry.getValue().command, guild.getId());
+                        guild.upsertCommand(entry.getValue().command).queue();
+                    } else {
+                        this.logger.info("Fail to add command: {}, Guild: {}", entry.getValue().command, entry.getValue().guildId);
+                    }
+                }
             }
         }
     }
@@ -217,22 +232,25 @@ public class InteractionMapper {
             commandData.setDefaultPermissions(DefaultMemberPermissions.enabledFor(controllerInfo.permissions()));
             commandData.setGuildOnly(controllerInfo.environment() == DiscordEnvironment.SERVER);
             if(localization != null) commandData.setLocalizationFunction(localization);
-            this.data.put(name[0], commandData);
+
+            CommandInfo info = new CommandInfo(commandData, controllerInfo.guildId());
+
+            this.data.put(name[0], info);
         }
 
         // only 1 level of subcommands /foo
         if(name.length == 1) {
-            this.data.get(name[0]).addOptions(handler.getOptions());
+            this.data.get(name[0]).command.addOptions(handler.getOptions());
         }
         // 2 levels of subcommands /foo bar
         else if(name.length == 2) {
             SubcommandData subcommandData = new SubcommandData(name[1], commandInfo.description());
             subcommandData.addOptions(handler.getOptions());
-            this.data.get(name[0]).addSubcommands(subcommandData);
+            this.data.get(name[0]).command.addSubcommands(subcommandData);
         }
         // 3 levels of subcommands /foo bar baz
         else if (name.length == 3) {
-            this.data.get(name[0]).getSubcommandGroups().stream().filter(group -> group.getName().equals(name[1])).findFirst().ifPresentOrElse(group -> {
+            this.data.get(name[0]).command.getSubcommandGroups().stream().filter(group -> group.getName().equals(name[1])).findFirst().ifPresentOrElse(group -> {
                 SubcommandData subcommandData = new SubcommandData(name[2], commandInfo.description());
                 subcommandData.addOptions(handler.getOptions());
                 group.addSubcommands(subcommandData);
@@ -241,7 +259,7 @@ public class InteractionMapper {
                 SubcommandData subcommandData = new SubcommandData(name[2], commandInfo.description());
                 subcommandData.addOptions(handler.getOptions());
                 groupData.addSubcommands(subcommandData);
-                this.data.get(name[0]).addSubcommandGroups(groupData);
+                this.data.get(name[0]).command.addSubcommandGroups(groupData);
             });
         }
     }
