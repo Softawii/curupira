@@ -16,7 +16,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import java.awt.*;
 import java.util.List;
 
-@DiscordController(value = "admin", description = "hello!", guildId = 856534404779868180L, permissions = Permission.ADMINISTRATOR)
+@DiscordController(value = "admin2", description = "hello!", guildId = 856534404779868180L, permissions = Permission.ADMINISTRATOR)
 public class AdminController {
 
     private static final int guildPageSize = 5;
