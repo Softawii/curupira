@@ -2,6 +2,7 @@ package com.softawii.curupira.v2.core;
 
 import com.softawii.curupira.v2.integration.ContextProvider;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.*;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -28,9 +29,18 @@ public class CurupiraBoot extends ListenerAdapter {
         this.jda = jda;
         this.logger.info("Curupira configuration loaded. Values: jda={}, registerCommandsToDiscord={}, packages={}", jda, registerCommandsToDiscord, packages);
 
+        try {
+            this.jda.awaitReady();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         // reset commands?
         if(registerCommandsToDiscord) {
             this.jda.updateCommands().addCommands().queue();
+            for(Guild guild : this.jda.getGuilds()) {
+                guild.updateCommands().addCommands().queue();
+            }
         }
 
         this.exceptionMapper = new ExceptionMapper(context, packages);
